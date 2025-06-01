@@ -22,9 +22,14 @@ jobs:
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile
 
-      - name: Create entry script
+      - name: Create entry script (simple method)
+        shell: cmd
         run: |
-          python -c "import sys; from pathlib import Path; Path('demucs_entry.py').write_text('''import sys\nfrom demucs.separate import main\n\nif __name__ == \"__main__\":\n    sys.exit(main())''')"
+          echo import sys > demucs_entry.py
+          echo from demucs.separate import main >> demucs_entry.py
+          echo. >> demucs_entry.py
+          echo if __name__ ^^=^^= ^"__main__^": >> demucs_entry.py
+          echo     sys.exit(main()) >> demucs_entry.py
 
       - name: Pre-download models
         run: |
@@ -37,9 +42,9 @@ jobs:
         run: |
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
-            --add-data "$env:LOCALAPPDATA\Programs\Python\Python310\Lib\site-packages\demucs\pretrained;demucs\pretrained" ^
-            --add-data "$env:USERPROFILE\.cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
-            --add-data "$env:USERPROFILE\.cache\torch\demucs;.cache\torch\demucs" ^
+            --add-data "%LOCALAPPDATA%\Programs\Python\Python310\Lib\site-packages\demucs\pretrained;demucs\pretrained" ^
+            --add-data "%USERPROFILE%\.cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
+            --add-data "%USERPROFILE%\.cache\torch\demucs;.cache\torch\demucs" ^
             --hidden-import demucs.pretrained ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.htdemucs ^
