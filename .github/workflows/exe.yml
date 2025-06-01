@@ -37,16 +37,17 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
+      - name: Copy demucs pretrained directory to local
+        run: |
+          python -c "import demucs, os, shutil; src = os.path.join(os.path.dirname(demucs.__file__), 'pretrained'); dst = os.path.join(os.getcwd(), 'demucs_pretrained'); shutil.copytree(src, dst, dirs_exist_ok=True)"
+          dir demucs_pretrained
+
       - name: Build EXE with PyInstaller
         shell: cmd
         run: |
-          for /f "delims=" %%i in ('python -c "import site; print(site.getsitepackages()[0])"') do set "SITE_PACKAGES=%%i"
-          echo Site-packages path: %SITE_PACKAGES%
-          dir "%SITE_PACKAGES%\demucs\pretrained"
-          
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
-            --add-data "%SITE_PACKAGES%\demucs\pretrained;demucs\pretrained" ^
+            --add-data "demucs_pretrained;demucs\pretrained" ^
             --add-data "%USERPROFILE%\.cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
             --add-data "%USERPROFILE%\.cache\torch\demucs;.cache\torch\demucs" ^
             --hidden-import demucs.pretrained ^
