@@ -21,8 +21,9 @@ jobs:
           pip install demucs==4.0.1
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile
+          pip install diffq  # 添加缺失的依赖
 
-      - name: Create entry script (simple method)
+      - name: Create entry script
         shell: cmd
         run: |
           echo import sys > demucs_entry.py
@@ -52,6 +53,7 @@ jobs:
             --hidden-import torch._dynamo ^
             --hidden-import torch.utils ^
             --hidden-import scipy.special.cython_special ^
+            --hidden-import diffq  # 添加隐藏导入
             --additional-hooks-dir=.
 
       - name: Add ffmpeg to package
