@@ -37,18 +37,12 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
-      - name: Find demucs installation path
-        id: find_demucs
-        run: |
-          python -c "import demucs, os; print(os.path.dirname(demucs.__file__))" > demucs_path.txt
-          set /p DEMUCS_PATH=<demucs_path.txt
-          echo "DEMUCS_PATH=%DEMUCS_PATH%" >> $env:GITHUB_ENV
-          echo "Pretrained path: %DEMUCS_PATH%\pretrained"
-          dir "%DEMUCS_PATH%\pretrained"
-
       - name: Copy demucs pretrained directory to local
+        shell: cmd
         run: |
-          python -c "import os, shutil; src = os.path.join(os.environ['DEMUCS_PATH'], 'pretrained'); dst = os.path.join(os.getcwd(), 'demucs_pretrained'); print(f'Copying from {src} to {dst}'); shutil.copytree(src, dst, dirs_exist_ok=True)"
+          for /f "delims=" %%i in ('python -c "import demucs, os; print(os.path.dirname(demucs.__file__))"') do set "DEMUCS_PATH=%%i"
+          echo Demucs path: !DEMUCS_PATH!
+          xcopy /E /I /Y "!DEMUCS_PATH!\pretrained" "demucs_pretrained\"
           dir demucs_pretrained
 
       - name: Build EXE with PyInstaller
