@@ -38,11 +38,8 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
       - name: Copy demucs pretrained directory to local
-        shell: cmd
         run: |
-          for /f "delims=" %%i in ('python -c "import demucs, os; print(os.path.dirname(demucs.__file__))"') do set "DEMUCS_PATH=%%i"
-          echo Demucs path: !DEMUCS_PATH!
-          xcopy /E /I /Y "!DEMUCS_PATH!\pretrained" "demucs_pretrained\"
+          python -c "import demucs, os, shutil; src = os.path.join(os.path.dirname(demucs.__file__), 'pretrained'); dst = os.path.join(os.getcwd(), 'demucs_pretrained'); print(f'Source path: {src}'); print(f'Destination path: {dst}'); if not os.path.exists(src): print('Source path does not exist!'); exit(1); shutil.copytree(src, dst, dirs_exist_ok=True); print('Copy completed successfully')"
           dir demucs_pretrained
 
       - name: Build EXE with PyInstaller
