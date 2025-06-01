@@ -37,12 +37,20 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
+      - name: Find demucs installation path
+        id: find_demucs
+        run: |
+          python -c "import demucs, os; print(os.path.dirname(demucs.__file__))" > demucs_path.txt
+          set /p DEMUCS_PATH=<demucs_path.txt
+          echo "DEMUCS_PATH=%DEMUCS_PATH%"
+          echo "DEMUCS_PATH=%DEMUCS_PATH%" >> $env:GITHUB_ENV
+
       - name: Build EXE with PyInstaller
         shell: cmd
         run: |
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
-            --add-data "%LOCALAPPDATA%\Programs\Python\Python310\Lib\site-packages\demucs\pretrained;demucs\pretrained" ^
+            --add-data "%DEMUCS_PATH%\pretrained;demucs\pretrained" ^
             --add-data "%USERPROFILE%\.cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
             --add-data "%USERPROFILE%\.cache\torch\demucs;.cache\torch\demucs" ^
             --hidden-import demucs.pretrained ^
