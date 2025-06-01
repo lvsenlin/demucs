@@ -1,43 +1,29 @@
-name: Build Demucs EXE with GPU Support
+name: Build Demucs EXE (CPU Only)
 on: [push]
 
 jobs:
-  build-demucs-exe:
+  build-demucs-cpu:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ['3.10']
-        torch-version: ['2.1.0+cu118']
-        torchaudio-version: ['2.1.0+cu118']
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.10'
           architecture: 'x64'
-
-      - name: Install CUDA via Direct Download
-        run: |
-          $cudaUrl = "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe"
-          $installerPath = "$env:RUNNER_TEMP\cuda_installer.exe"
-          Invoke-WebRequest -Uri $cudaUrl -OutFile $installerPath
-          Start-Process -FilePath $installerPath -Args "-s" -Wait -NoNewWindow
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller==5.13.2
           pip install demucs==4.0.1
-          pip install torch==${{ matrix.torch-version }} torchaudio==${{ matrix.torchaudio-version }} -f https://download.pytorch.org/whl/torch_stable.html
+          pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile
 
       - name: Create entry script
         run: |
-          @echo off
           echo import sys > demucs_entry.py
           echo from demucs.separate import main >> demucs_entry.py
           echo if __name__ == "__main__": >> demucs_entry.py
@@ -52,15 +38,10 @@ jobs:
       - name: Build EXE with PyInstaller
         run: |
           pyinstaller --onefile demucs_entry.py ^
-            --name demucs-gpu.exe ^
-            --add-data "$env:LOCALAPPDATA\Programs\Python\Python${{ matrix.python-version }}\Lib\site-packages\demucs\pretrained;demucs\pretrained" ^
+            --name demucs-cpu.exe ^
+            --add-data "$env:LOCALAPPDATA\Programs\Python\Python310\Lib\site-packages\demucs\pretrained;demucs\pretrained" ^
             --add-data "$env:USERPROFILE\.cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
             --add-data "$env:USERPROFILE\.cache\torch\demucs;.cache\torch\demucs" ^
-            --add-binary "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin\cudart64_110.dll;." ^
-            --add-binary "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin\cublas64_11.dll;." ^
-            --add-binary "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin\cublasLt64_11.dll;." ^
-            --add-binary "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin\cudnn_adv_infer64_8.dll;." ^
-            --add-binary "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin\cudnn_cnn_infer64_8.dll;." ^
             --hidden-import demucs.pretrained ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.htdemucs ^
@@ -79,17 +60,16 @@ jobs:
 
       - name: Create batch script
         run: |
-          @echo off
-          echo @echo off > .\dist\demucs-gpu.bat
-          echo set DEMUCS_MODEL_DIR=%%~dp0.cache\torch\demucs >> .\dist\demucs-gpu.bat
-          echo "%%~dp0demucs-gpu.exe" %%* >> .\dist\demucs-gpu.bat
+          echo @echo off > dist\demucs-cpu.bat
+          echo set DEMUCS_MODEL_DIR=%%~dp0.cache\torch\demucs >> dist\demucs-cpu.bat
+          echo "%%~dp0demucs-cpu.exe" %%* >> dist\demucs-cpu.bat
 
-      - name: Zip artifacts
+      - name: Create standalone package
         run: |
-          7z a demucs-gpu.zip .\dist\*
+          7z a demucs-cpu-package.zip .\dist\*
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: demucs-gpu-package
-          path: demucs-gpu.zip
+          name: demucs-cpu-package
+          path: demucs-cpu-package.zip
