@@ -22,16 +22,9 @@ jobs:
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile
 
-      - name: Create entry script (PowerShell compatible)
+      - name: Create entry script
         run: |
-          $content = @"
-import sys
-from demucs.separate import main
-
-if __name__ == "__main__":
-    sys.exit(main())
-"@
-          Set-Content -Path demucs_entry.py -Value $content
+          python -c "import sys; from pathlib import Path; Path('demucs_entry.py').write_text('''import sys\nfrom demucs.separate import main\n\nif __name__ == \"__main__\":\n    sys.exit(main())''')"
 
       - name: Pre-download models
         run: |
@@ -64,14 +57,12 @@ if __name__ == "__main__":
           copy /Y .\dist\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe .\dist\
           copy /Y .\dist\ffmpeg-master-latest-win64-gpl\bin\ffprobe.exe .\dist\
 
-      - name: Create batch script (PowerShell compatible)
+      - name: Create batch script
+        shell: cmd
         run: |
-          $batContent = @"
-@echo off
-set DEMUCS_MODEL_DIR=%~dp0.cache\torch\demucs
-"%~dp0demucs-cpu.exe" %*
-"@
-          Set-Content -Path .\dist\demucs-cpu.bat -Value $batContent
+          echo @echo off > dist\demucs-cpu.bat
+          echo set DEMUCS_MODEL_DIR=%%~dp0.cache\torch\demucs >> dist\demucs-cpu.bat
+          echo "%%~dp0demucs-cpu.exe" %%* >> dist\demucs-cpu.bat
 
       - name: Create standalone package
         shell: cmd
