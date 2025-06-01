@@ -22,12 +22,16 @@ jobs:
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile
 
-      - name: Create entry script
+      - name: Create entry script (PowerShell compatible)
         run: |
-          echo import sys > demucs_entry.py
-          echo from demucs.separate import main >> demucs_entry.py
-          echo if __name__ == "__main__": >> demucs_entry.py
-          echo     sys.exit(main()) >> demucs_entry.py
+          $content = @"
+import sys
+from demucs.separate import main
+
+if __name__ == "__main__":
+    sys.exit(main())
+"@
+          Set-Content -Path demucs_entry.py -Value $content
 
       - name: Pre-download models
         run: |
@@ -36,6 +40,7 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
       - name: Build EXE with PyInstaller
+        shell: cmd
         run: |
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
@@ -52,19 +57,24 @@ jobs:
             --additional-hooks-dir=.
 
       - name: Add ffmpeg to package
+        shell: cmd
         run: |
           curl -L https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip -o ffmpeg.zip
           7z x ffmpeg.zip -o./dist
           copy /Y .\dist\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe .\dist\
           copy /Y .\dist\ffmpeg-master-latest-win64-gpl\bin\ffprobe.exe .\dist\
 
-      - name: Create batch script
+      - name: Create batch script (PowerShell compatible)
         run: |
-          echo @echo off > dist\demucs-cpu.bat
-          echo set DEMUCS_MODEL_DIR=%%~dp0.cache\torch\demucs >> dist\demucs-cpu.bat
-          echo "%%~dp0demucs-cpu.exe" %%* >> dist\demucs-cpu.bat
+          $batContent = @"
+@echo off
+set DEMUCS_MODEL_DIR=%~dp0.cache\torch\demucs
+"%~dp0demucs-cpu.exe" %*
+"@
+          Set-Content -Path .\dist\demucs-cpu.bat -Value $batContent
 
       - name: Create standalone package
+        shell: cmd
         run: |
           7z a demucs-cpu-package.zip .\dist\*
 
