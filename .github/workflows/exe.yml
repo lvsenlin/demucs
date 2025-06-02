@@ -31,38 +31,22 @@ jobs:
           echo if __name__ ^^=^^= ^"__main__^": >> demucs_entry.py
           echo     sys.exit(main()) >> demucs_entry.py
 
-      - name: Pre-download models
+      - name: Pre-download models and create cache
         run: |
-          python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
-          python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
-          python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
-
-      - name: Prepare PyInstaller data
-        shell: cmd
-        run: |
-          # 创建缓存目录结构
+          # 设置模型缓存目录
+          set DEMUCS_MODEL_DIR=%cd%\.cache\torch\demucs
           mkdir .cache
           mkdir .cache\torch
           mkdir .cache\torch\hub
           mkdir .cache\torch\hub\checkpoints
           mkdir .cache\torch\demucs
           
-          # 检查并复制模型缓存（如果存在）
-          if exist "%USERPROFILE%\.cache\torch\hub\checkpoints" (
-            robocopy "%USERPROFILE%\.cache\torch\hub\checkpoints" ".cache\torch\hub\checkpoints" /E
-          ) else (
-            echo Source directory does not exist: %USERPROFILE%\.cache\torch\hub\checkpoints
-          )
-          
-          if exist "%USERPROFILE%\.cache\torch\demucs" (
-            robocopy "%USERPROFILE%\.cache\torch\demucs" ".cache\torch\demucs" /E
-          ) else (
-            echo Source directory does not exist: %USERPROFILE%\.cache\torch\demucs
-          )
+          # 下载模型到指定目录
+          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%cd%\.cache\torch\demucs'; from demucs.pretrained import get_model; get_model('htdemucs_ft')"
+          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%cd%\.cache\torch\demucs'; from demucs.pretrained import get_model; get_model('htdemucs')"
+          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%cd%\.cache\torch\demucs'; from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
-      - name: Verify cache directories
-        run: |
-          echo "Contents of .cache directory:"
+          # 列出下载的文件
           dir /s .cache
 
       - name: Build EXE with PyInstaller
