@@ -47,9 +47,23 @@ jobs:
           mkdir .cache\torch\hub\checkpoints
           mkdir .cache\torch\demucs
           
-          # 复制模型缓存
-          robocopy "%USERPROFILE%\.cache\torch\hub\checkpoints" ".cache\torch\hub\checkpoints" /E
-          robocopy "%USERPROFILE%\.cache\torch\demucs" ".cache\torch\demucs" /E
+          # 检查并复制模型缓存（如果存在）
+          if exist "%USERPROFILE%\.cache\torch\hub\checkpoints" (
+            robocopy "%USERPROFILE%\.cache\torch\hub\checkpoints" ".cache\torch\hub\checkpoints" /E
+          ) else (
+            echo Source directory does not exist: %USERPROFILE%\.cache\torch\hub\checkpoints
+          )
+          
+          if exist "%USERPROFILE%\.cache\torch\demucs" (
+            robocopy "%USERPROFILE%\.cache\torch\demucs" ".cache\torch\demucs" /E
+          ) else (
+            echo Source directory does not exist: %USERPROFILE%\.cache\torch\demucs
+          )
+
+      - name: Verify cache directories
+        run: |
+          echo "Contents of .cache directory:"
+          dir /s .cache
 
       - name: Build EXE with PyInstaller
         shell: cmd
