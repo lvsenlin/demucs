@@ -40,10 +40,14 @@ jobs:
       - name: Copy demucs pretrained directory to local
         shell: cmd
         run: |
-          for /f "delims=" %%i in ('python -c "import site; print(site.getsitepackages()[0])"') do (
-            echo Site-packages path: %%i
-            robocopy "%%i\demucs\pretrained" "demucs_pretrained" /E
-            if %ERRORLEVEL% GTR 1 exit /b 1
+          for /f "delims=" %%i in ('python -c "import demucs, os; print(os.path.dirname(demucs.__file__))"') do (
+            echo Demucs path: %%i
+            if exist "%%i\pretrained" (
+              robocopy "%%i\pretrained" "demucs_pretrained" /E
+            ) else (
+              echo Pretrained directory not found at: %%i\pretrained
+              exit /b 1
+            )
           )
           dir demucs_pretrained
 
