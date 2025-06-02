@@ -37,19 +37,14 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
-      - name: Get site-packages path
-        id: site_packages
-        run: |
-          python -c "import site; print(site.getsitepackages()[0])" > site_packages.txt
-          set /p SITE_PACKAGES=<site_packages.txt
-          echo "SITE_PACKAGES=%SITE_PACKAGES%" >> $env:GITHUB_ENV
-
       - name: Copy demucs pretrained directory to local
         shell: cmd
         run: |
-          echo Site-packages path: %SITE_PACKAGES%
-          robocopy "%SITE_PACKAGES%\demucs\pretrained" "demucs_pretrained" /E /NFL /NDL /NJH /NJS
-          if %ERRORLEVEL% GTR 1 exit /b 1
+          for /f "delims=" %%i in ('python -c "import site; print(site.getsitepackages()[0])"') do (
+            echo Site-packages path: %%i
+            robocopy "%%i\demucs\pretrained" "demucs_pretrained" /E
+            if %ERRORLEVEL% GTR 1 exit /b 1
+          )
           dir demucs_pretrained
 
       - name: Build EXE with PyInstaller
