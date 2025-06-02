@@ -37,18 +37,21 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
-      - name: Get Python installation path
-        id: python_path
-        run: |
-          python -c "import sys; print(sys.exec_prefix)" > python_path.txt
-          set /p PYTHON_PATH=<python_path.txt
-          echo "PYTHON_PATH=%PYTHON_PATH%" >> $env:GITHUB_ENV
-
       - name: Copy demucs pretrained directory to local
         shell: cmd
         run: |
+          for /f "delims=" %%i in ('python -c "import sys; print(sys.exec_prefix)"') do (
+            set PYTHON_PATH=%%i
+          )
           set DEMUCS_PATH=%PYTHON_PATH%\Lib\site-packages\demucs
+          echo Python path: %PYTHON_PATH%
           echo Demucs path: %DEMUCS_PATH%
+          
+          if not exist "%DEMUCS_PATH%\pretrained" (
+            echo Pretrained directory not found at: %DEMUCS_PATH%\pretrained
+            exit /b 1
+          )
+          
           robocopy "%DEMUCS_PATH%\pretrained" "demucs_pretrained" /E
           if %ERRORLEVEL% GTR 1 exit /b 1
           dir demucs_pretrained
