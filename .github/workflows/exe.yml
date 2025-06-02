@@ -37,19 +37,15 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
-      - name: Verify demucs installation
-        run: |
-          python -c "import demucs; print(f'demucs version: {demucs.__version__}'); print(f'demucs path: {demucs.__file__}');"
-          python -c "import os; print('Contents of demucs directory:'); [print(f) for f in os.listdir(os.path.dirname(demucs.__file__))]"
-
       - name: Prepare PyInstaller data
+        shell: cmd
         run: |
-          # 不需要复制 pretrained 目录，因为它实际上并不存在
-          echo "Skipping pretrained directory copy as it doesn't exist in the package"
-          
-          # 确保缓存目录存在
-          mkdir -p .cache\torch\hub\checkpoints
-          mkdir -p .cache\torch\demucs
+          # 创建缓存目录结构
+          mkdir .cache
+          mkdir .cache\torch
+          mkdir .cache\torch\hub
+          mkdir .cache\torch\hub\checkpoints
+          mkdir .cache\torch\demucs
           
           # 复制模型缓存
           robocopy "%USERPROFILE%\.cache\torch\hub\checkpoints" ".cache\torch\hub\checkpoints" /E
@@ -60,8 +56,7 @@ jobs:
         run: |
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
-            --add-data ".cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
-            --add-data ".cache\torch\demucs;.cache\torch\demucs" ^
+            --add-data ".cache;.cache" ^
             --hidden-import demucs.pretrained ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.htdemucs ^
