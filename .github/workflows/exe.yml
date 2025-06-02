@@ -37,33 +37,31 @@ jobs:
           python -c "from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "from demucs.pretrained import get_model; get_model('mdx_extra_q')"
 
-      - name: Copy demucs pretrained directory to local
-        shell: cmd
+      - name: Verify demucs installation
         run: |
-          for /f "delims=" %%i in ('python -c "import sys; print(sys.exec_prefix)"') do (
-            set PYTHON_PATH=%%i
-          )
-          set DEMUCS_PATH=%PYTHON_PATH%\Lib\site-packages\demucs
-          echo Python path: %PYTHON_PATH%
-          echo Demucs path: %DEMUCS_PATH%
+          python -c "import demucs; print(f'demucs version: {demucs.__version__}'); print(f'demucs path: {demucs.__file__}');"
+          python -c "import os; print('Contents of demucs directory:'); [print(f) for f in os.listdir(os.path.dirname(demucs.__file__))]"
+
+      - name: Prepare PyInstaller data
+        run: |
+          # 不需要复制 pretrained 目录，因为它实际上并不存在
+          echo "Skipping pretrained directory copy as it doesn't exist in the package"
           
-          if not exist "%DEMUCS_PATH%\pretrained" (
-            echo Pretrained directory not found at: %DEMUCS_PATH%\pretrained
-            exit /b 1
-          )
+          # 确保缓存目录存在
+          mkdir -p .cache\torch\hub\checkpoints
+          mkdir -p .cache\torch\demucs
           
-          robocopy "%DEMUCS_PATH%\pretrained" "demucs_pretrained" /E
-          if %ERRORLEVEL% GTR 1 exit /b 1
-          dir demucs_pretrained
+          # 复制模型缓存
+          robocopy "%USERPROFILE%\.cache\torch\hub\checkpoints" ".cache\torch\hub\checkpoints" /E
+          robocopy "%USERPROFILE%\.cache\torch\demucs" ".cache\torch\demucs" /E
 
       - name: Build EXE with PyInstaller
         shell: cmd
         run: |
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
-            --add-data "demucs_pretrained;demucs\pretrained" ^
-            --add-data "%USERPROFILE%\.cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
-            --add-data "%USERPROFILE%\.cache\torch\demucs;.cache\torch\demucs" ^
+            --add-data ".cache\torch\hub\checkpoints;.cache\torch\hub\checkpoints" ^
+            --add-data ".cache\torch\demucs;.cache\torch\demucs" ^
             --hidden-import demucs.pretrained ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.htdemucs ^
