@@ -32,21 +32,21 @@ jobs:
           echo     sys.exit(main()) >> demucs_entry.py
 
       - name: Pre-download models and create cache
+        shell: cmd
         run: |
-          # 设置模型缓存目录
-          set DEMUCS_MODEL_DIR=%cd%\.cache\torch\demucs
           mkdir .cache
           mkdir .cache\torch
-          mkdir .cache\torch\hub
-          mkdir .cache\torch\hub\checkpoints
           mkdir .cache\torch\demucs
           
-          # 下载模型到指定目录
-          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%cd%\.cache\torch\demucs'; from demucs.pretrained import get_model; get_model('htdemucs_ft')"
-          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%cd%\.cache\torch\demucs'; from demucs.pretrained import get_model; get_model('htdemucs')"
-          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%cd%\.cache\torch\demucs'; from demucs.pretrained import get_model; get_model('mdx_extra_q')"
-
-          # 列出下载的文件
+          :: 使用简化的路径设置
+          set CACHE_PATH=.cache\torch\demucs
+          
+          :: 下载模型到指定目录
+          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%CACHE_PATH%'; from demucs.pretrained import get_model; get_model('htdemucs_ft')"
+          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%CACHE_PATH%'; from demucs.pretrained import get_model; get_model('htdemucs')"
+          python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%CACHE_PATH%'; from demucs.pretrained import get_model; get_model('mdx_extra_q')"
+          
+          :: 列出下载的文件
           dir /s .cache
 
       - name: Build EXE with PyInstaller
