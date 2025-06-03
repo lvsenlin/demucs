@@ -22,14 +22,16 @@ jobs:
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile diffq
 
-      - name: Create entry script
-        shell: cmd
+      - name: Create entry script (correct syntax)
         run: |
-          echo import sys > demucs_entry.py
-          echo from demucs.separate import main >> demucs_entry.py
-          echo. >> demucs_entry.py
-          echo if __name__ ^^=^^= ^"__main__^": >> demucs_entry.py
-          echo     sys.exit(main()) >> demucs_entry.py
+          echo "import sys" > demucs_entry.py
+          echo "from demucs.separate import main" >> demucs_entry.py
+          echo "" >> demucs_entry.py
+          echo "if __name__ == \"__main__\":" >> demucs_entry.py
+          echo "    sys.exit(main())" >> demucs_entry.py
+          
+          # 验证脚本内容
+          type demucs_entry.py
 
       - name: Pre-download models and create cache
         shell: cmd
@@ -38,15 +40,12 @@ jobs:
           mkdir .cache\torch
           mkdir .cache\torch\demucs
           
-          :: 使用简化的路径设置
           set CACHE_PATH=.cache\torch\demucs
           
-          :: 下载模型到指定目录
           python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%CACHE_PATH%'; from demucs.pretrained import get_model; get_model('htdemucs_ft')"
           python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%CACHE_PATH%'; from demucs.pretrained import get_model; get_model('htdemucs')"
           python -c "import os; os.environ['DEMUCS_MODEL_DIR'] = r'%CACHE_PATH%'; from demucs.pretrained import get_model; get_model('mdx_extra_q')"
           
-          :: 列出下载的文件
           dir /s .cache
 
       - name: Build EXE with PyInstaller
