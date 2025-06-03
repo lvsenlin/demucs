@@ -22,16 +22,12 @@ jobs:
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile diffq
 
-      - name: Create entry script (correct syntax)
+      - name: Create entry script with Python
         run: |
-          echo "import sys" > demucs_entry.py
-          echo "from demucs.separate import main" >> demucs_entry.py
-          echo "" >> demucs_entry.py
-          echo "if __name__ == \"__main__\":" >> demucs_entry.py
-          echo "    sys.exit(main())" >> demucs_entry.py
-          
-          # 验证脚本内容
+          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import sys\nfrom demucs.separate import main\n\nif __name__ == \"__main__\":\n    sys.exit(main())''')"
+          echo "=== Entry script content ==="
           type demucs_entry.py
+          echo "============================"
 
       - name: Pre-download models and create cache
         shell: cmd
