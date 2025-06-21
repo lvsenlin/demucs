@@ -25,7 +25,7 @@ jobs:
       - name: Create entry script using Python
         shell: cmd
         run: |
-          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import os\nimport sys\n\n# 修复运行时模型路径问题\nif getattr(sys, \\'frozen\\', False):\n    os.environ[\\'DEMUCS_MODEL_DIR\\'] = os.path.join(sys._MEIPASS, \\'.cache\\\\torch\\\\demucs\\')\n\nfrom demucs.separate import main\n\nif __name__ == \\'__main__\\':\n    sys.exit(main())\n''')"
+          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import os\nimport sys\n\n# Fix runtime model path\nif getattr(sys, \\'frozen\\', False):\n    os.environ[\\'DEMUCS_MODEL_DIR\\'] = os.path.join(sys._MEIPASS, \\'.cache\\\\torch\\\\demucs\\')\n\nfrom demucs.separate import main\n\nif __name__ == \\'__main__\\':\n    sys.exit(main())\n''')"
           echo === Entry script content ===
           type demucs_entry.py
           echo ============================
@@ -45,7 +45,6 @@ jobs:
           
           dir /s .cache
 
-      # 关键修复：包含 Demucs 的远程文件
       - name: Copy demucs remote files
         shell: cmd
         run: |
@@ -57,7 +56,7 @@ jobs:
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
             --add-data ".cache;.cache" ^
-            --add-data "demucs_remote;demucs/remote" ^  # 包含远程文件
+            --add-data "demucs_remote;demucs/remote" ^
             --hidden-import demucs.pretrained ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.htdemucs ^
