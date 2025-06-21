@@ -25,7 +25,18 @@ jobs:
       - name: Create entry script using Python
         shell: cmd
         run: |
-          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import os\nimport sys\n\n# Fix runtime model path\nif getattr(sys, \\'frozen\\', False):\n    os.environ[\\'DEMUCS_MODEL_DIR\\'] = os.path.join(sys._MEIPASS, \\'.cache\\\\torch\\\\demucs\\')\n\nfrom demucs.separate import main\n\nif __name__ == \\'__main__\\':\n    sys.exit(main())\n''')"
+          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import os
+import sys
+
+# Fix runtime model path
+if getattr(sys, 'frozen', False):
+    os.environ['DEMUCS_MODEL_DIR'] = os.path.join(sys._MEIPASS, '.cache\\\\torch\\\\demucs')
+
+from demucs.separate import main
+
+if __name__ == '__main__':
+    sys.exit(main())
+''')"
           echo === Entry script content ===
           type demucs_entry.py
           echo ============================
