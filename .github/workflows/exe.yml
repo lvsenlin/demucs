@@ -22,11 +22,10 @@ jobs:
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile diffq
 
-      # 修复点：使用Python创建脚本避免转义问题
       - name: Create entry script using Python
         shell: cmd
         run: |
-          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import sys\nfrom demucs.separate import main\n\nif __name__ == \"__main__\":\n    sys.exit(main())\n''')"
+          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import os\nimport sys\n\n# 修复运行时模型路径问题\nif getattr(sys, \\'frozen\\', False):\n    os.environ[\\'DEMUCS_MODEL_DIR\\'] = os.path.join(sys._MEIPASS, \\'.cache\\\\torch\\\\demucs\\')\n\nfrom demucs.separate import main\n\nif __name__ == \\'__main__\\':\n    sys.exit(main())\n''')"
           echo === Entry script content ===
           type demucs_entry.py
           echo ============================
@@ -46,12 +45,19 @@ jobs:
           
           dir /s .cache
 
+      # 关键修复：包含 Demucs 的远程文件
+      - name: Copy demucs remote files
+        shell: cmd
+        run: |
+          python -c "import os, shutil, demucs; src = os.path.join(os.path.dirname(demucs.__file__), 'remote'); dst = 'demucs_remote'; shutil.copytree(src, dst, dirs_exist_ok=True);"
+
       - name: Build EXE with PyInstaller
         shell: cmd
         run: |
           pyinstaller --onefile demucs_entry.py ^
             --name demucs-cpu.exe ^
             --add-data ".cache;.cache" ^
+            --add-data "demucs_remote;demucs/remote" ^  # 包含远程文件
             --hidden-import demucs.pretrained ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.htdemucs ^
@@ -73,7 +79,6 @@ jobs:
         shell: cmd
         run: |
           echo @echo off > dist\demucs-cpu.bat
-          echo set DEMUCS_MODEL_DIR=%%~dp0.cache\torch\demucs >> dist\demucs-cpu.bat
           echo "%%~dp0demucs-cpu.exe" %%* >> dist\demucs-cpu.bat
 
       - name: Create standalone package
