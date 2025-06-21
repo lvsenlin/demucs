@@ -22,21 +22,20 @@ jobs:
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile diffq
 
-      - name: Create entry script using Python
+      - name: Create entry script
         shell: cmd
         run: |
-          python -c "with open('demucs_entry.py', 'w') as f: f.write('''import os
-import sys
-
-# Fix runtime model path
-if getattr(sys, 'frozen', False):
-    os.environ['DEMUCS_MODEL_DIR'] = os.path.join(sys._MEIPASS, '.cache\\\\torch\\\\demucs')
-
-from demucs.separate import main
-
-if __name__ == '__main__':
-    sys.exit(main())
-''')"
+          echo import os > demucs_entry.py
+          echo import sys >> demucs_entry.py
+          echo. >> demucs_entry.py
+          echo "# Fix runtime model path" >> demucs_entry.py
+          echo "if getattr(sys, 'frozen', False):" >> demucs_entry.py
+          echo "    os.environ['DEMUCS_MODEL_DIR'] = os.path.join(sys._MEIPASS, r'.cache\torch\demucs')" >> demucs_entry.py
+          echo. >> demucs_entry.py
+          echo "from demucs.separate import main" >> demucs_entry.py
+          echo. >> demucs_entry.py
+          echo "if __name__ == '__main__':" >> demucs_entry.py
+          echo "    sys.exit(main())" >> demucs_entry.py
           echo === Entry script content ===
           type demucs_entry.py
           echo ============================
