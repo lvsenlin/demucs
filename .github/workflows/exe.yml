@@ -21,6 +21,7 @@ jobs:
           pip install demucs==4.0.1
           pip install torch==2.1.0+cpu torchaudio==2.1.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
           pip install ffmpeg-python librosa numpy==1.23.5 soundfile diffq
+          pip install tqdm  # 添加进度条支持
 
       - name: Create entry script
         shell: cmd
@@ -28,13 +29,23 @@ jobs:
           echo import os > demucs_entry.py
           echo import sys >> demucs_entry.py
           echo. >> demucs_entry.py
-          echo "# Fix runtime model path" >> demucs_entry.py
+          echo "# Fix runtime model path and output directory" >> demucs_entry.py
           echo "if getattr(sys, 'frozen', False):" >> demucs_entry.py
           echo "    os.environ['DEMUCS_MODEL_DIR'] = os.path.join(sys._MEIPASS, r'.cache\torch\demucs')" >> demucs_entry.py
+          echo "    # Ensure output directory is writable" >> demucs_entry.py
+          echo "    os.environ['DEMUCS_OUTPUT_DIR'] = os.path.join(os.getcwd(), 'separated')" >> demucs_entry.py
+          echo "else:" >> demucs_entry.py
+          echo "    os.environ['DEMUCS_OUTPUT_DIR'] = os.path.join(os.getcwd(), 'separated')" >> demucs_entry.py
+          echo. >> demucs_entry.py
+          echo "# Enable verbose output" >> demucs_entry.py
+          echo "os.environ['DEMUCS_VERBOSE'] = '1'" >> demucs_entry.py
           echo. >> demucs_entry.py
           echo "from demucs.separate import main" >> demucs_entry.py
           echo. >> demucs_entry.py
           echo "if __name__ == '__main__':" >> demucs_entry.py
+          echo "    # Print environment for debugging" >> demucs_entry.py
+          echo "    print(f\"Model directory: {os.environ.get('DEMUCS_MODEL_DIR', 'default')}\")" >> demucs_entry.py
+          echo "    print(f\"Output directory: {os.environ.get('DEMUCS_OUTPUT_DIR', 'default')}\")" >> demucs_entry.py
           echo "    sys.exit(main())" >> demucs_entry.py
           echo === Entry script content ===
           type demucs_entry.py
@@ -74,7 +85,8 @@ jobs:
             --hidden-import torch._dynamo ^
             --hidden-import torch.utils ^
             --hidden-import scipy.special.cython_special ^
-            --hidden-import diffq
+            --hidden-import diffq ^
+            --hidden-import tqdm
 
       - name: Add ffmpeg to package
         shell: cmd
@@ -88,7 +100,14 @@ jobs:
         shell: cmd
         run: |
           echo @echo off > dist\demucs-cpu.bat
+          echo REM Ensure output directory exists >> dist\demucs-cpu.bat
+          echo if not exist "%%~dp0separated" mkdir "%%~dp0separated" >> dist\demucs-cpu.bat
+          echo. >> dist\demucs-cpu.bat
           echo "%%~dp0demucs-cpu.exe" %%* >> dist\demucs-cpu.bat
+          echo. >> dist\demucs-cpu.bat
+          echo echo. >> dist\demucs-cpu.bat
+          echo echo Output files are in: %%~dp0separated >> dist\demucs-cpu.bat
+          echo pause >> dist\demucs-cpu.bat
 
       - name: Create standalone package
         shell: cmd
