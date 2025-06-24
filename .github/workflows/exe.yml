@@ -51,7 +51,7 @@ jobs:
           echo "        model_path = os.path.join(model_dir, model)" >> demucs_entry.py
           echo "        if not os.path.exists(model_path):" >> demucs_entry.py
           echo "            logger.error(f'Model file not found: {model_path}')" >> demucs_entry.py
-          echo "        else:" >> demucs_entry.py
+          echo "        else:" >> demucs_entry极
           echo "            logger.info(f'Model file found: {model_path}')" >> demucs_entry.py
           echo "else:" >> demucs_entry.py
           echo "    logger.info('Running in script mode')" >> demucs_entry.py
@@ -141,13 +141,9 @@ jobs:
           echo REM Create output directory if not exists >> dist\demucs-cpu.bat
           echo if not exist "!WORKDIR!separated" mkdir "!WORKDIR!separated" >> dist\demucs-cpu.bat
           echo. >> dist\demucs-cpu.bat
-          echo REM Run the executable with arguments and capture output >> dist\demucs-cpu.bat
-          echo set "LOGFILE=!WORKDIR!demucs.log" >> dist\demucs-cpu.bat
-          echo "!WORKDIR!demucs-cpu.exe" %%* > "!LOGFILE!" 2>&1 >> dist\demucs-cpu.bat
+          echo REM Run the executable with arguments >> dist\demucs-cpu.bat
+          echo "!WORKDIR!demucs-cpu.exe" %%* >> dist\demucs-cpu.bat
           echo set EXITCODE=!errorlevel! >> dist\demucs-cpu.bat
-          echo. >> dist\demucs-cpu.bat
-          echo REM Show log content >> dist\demucs-cpu.bat
-          echo type "!LOGFILE!" >> dist\demucs-cpu.bat
           echo. >> dist\demucs-cpu.bat
           echo REM Verify output directory >> dist\demucs-cpu.bat
           echo echo. >> dist\demucs-cpu.bat
