@@ -58,7 +58,7 @@ jobs:
           echo "        " >> demucs_entry.py
           echo "        # Set model environment variable" >> demucs_entry.py
           echo "        os.environ['DEMUCS_MODEL_DIR'] = model_dir" >> demucs_entry.py
-          echo "        logger.info(f\"Model directory set to: {model_dir}\")" >> demucs_entry.py
+          echo "        logger.info(f\"Model directory set to: {model_dir}\")" >> dem极s_entry.py
           echo "        " >> demucs_entry.py
           echo "        # Verify model file exists" >> demucs_entry.py
           echo "        model_path = os.path.join(model_dir, 'htdemucs_ft.th')" >> demucs_entry.py
@@ -75,7 +75,7 @@ jobs:
           echo "os.environ['DEMUCS_VERBOSE'] = '1'" >> demucs_entry.py
           echo "os.environ['LOGLEVEL'] = 'INFO'" >> demucs_entry.py
           echo. >> demucs_entry.py
-          echo "# Main function with model setup" >> demucs_entry.py
+          echo "# Main function with output directory override" >> demucs_entry.py
           echo "def run_demucs():" >> demucs_entry.py
           echo "    if not setup_model():" >> demucs_entry.py
           echo "        return 1" >> demucs_entry.py
@@ -83,7 +83,23 @@ jobs:
           echo "    try:" >> demucs_entry.py
           echo "        from demucs.separate import main" >> demucs_entry.py
           echo "        logger.info('Starting Demucs processing')" >> demucs_entry.py
-          echo "        logger.info(f'Arguments: {sys.argv}')" >> demucs_entry.py
+          echo "        " >> demucs_entry.py
+          echo "        # 1. 强制设置输出目录到程序目录下的 separated 文件夹" >> demucs_entry.py
+          echo "        output_dir = os.path.join(os.getcwd(), 'separated')" >> demucs_entry.py
+          echo "        os.makedirs(output_dir, exist_ok=True)" >> demucs_entry.py
+          echo "        " >> demucs_entry.py
+          echo "        # 2. 检查命令行参数中是否已设置输出目录" >> demucs_entry.py
+          echo "        has_output_arg = any(arg.startswith(('-o', '--out')) for arg in sys.argv)" >> demucs_entry.py
+          echo "        " >> demucs_entry.py
+          echo "        # 3. 如果没有设置输出目录，添加输出目录参数" >> demucs_entry.py
+          echo "        if not has_output_arg:" >> demucs_entry.py
+          echo "            sys.argv.extend(['-o', output_dir])" >> demucs_entry.py
+          echo "            logger.info(f'Added output directory: {output_dir}')" >> demucs_entry.py
+          echo "        " >> demucs_entry.py
+          echo "        # 4. 记录最终参数" >> demucs_entry.py
+          echo "        logger.info(f'Final arguments: {sys.argv}')" >> demucs_entry.py
+          echo "        " >> demucs_entry.py
+          echo "        # 5. 运行主处理" >> demucs_entry.py
           echo "        return main()" >> demucs_entry.py
           echo "    except Exception as e:" >> demucs_entry.py
           echo "        logger.error(f'Demucs processing failed: {e}')" >> demucs_entry.py
@@ -92,6 +108,7 @@ jobs:
           echo. >> demucs_entry.py
           echo "if __name__ == '__main__':" >> demucs_entry.py
           echo "    logger.info(f'Current working directory: {os.getcwd()}')" >> demucs_entry.py
+          echo "    logger.info(f'Original arguments: {sys.argv}')" >> demucs_entry.py
           echo "    sys.exit(run_demucs())" >> demucs_entry.py
           echo === Entry script content ===
           type demucs_entry.py
@@ -137,7 +154,7 @@ jobs:
           echo REM Set current directory as working directory >> dist\demucs-cpu.bat
           echo set "WORKDIR=%%~dp0" >> dist\demucs-cpu.bat
           echo cd /d "!WORKDIR!" >> dist\demucs-cpu.bat
-          echo. >> dist\demucs-cpu.bat
+          echo. >> dist\demucs-c极.bat
           echo REM Add current directory to PATH for ffmpeg >> dist\demucs-cpu.bat
           echo set "PATH=!PATH!;!WORKDIR!" >> dist\demucs-cpu.bat
           echo. >> dist\demucs-cpu.bat
