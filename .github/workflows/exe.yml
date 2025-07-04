@@ -26,17 +26,19 @@ jobs:
         
     - name: Prepare models
       run: |
-        python prepare_models.py
+        python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
+        mkdir models
+        copy "$env:USERPROFILE\.cache\torch\hub\facebookresearch_demucs_main\htdemucs_ft*" models\
 
     - name: Build executable
       run: |
-        pyinstaller --onefile ^
-          --add-data "models;models" ^
-          --name demucs.exe ^
+        pyinstaller --onefile `
+          --add-data "models;models" `
+          --name demucs.exe `
           demucs_exe.py
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # 更新到 v4 版本
       with:
         name: demucs-windows
         path: dist/demucs.exe
