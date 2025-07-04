@@ -24,12 +24,17 @@ jobs:
         pip install torch==2.1.0 torchaudio==2.1.0
         pip install demucs==4.0.0 pyinstaller==6.0.0
         
-    - name: Prepare models
+    - name: Download models
       run: |
+        # 显式设置 Torch 缓存路径
+        $env:TORCH_HOME = "$pwd\.torch"
         python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
+        
+    - name: Prepare models directory
+      run: |
         mkdir models
-        copy "$env:USERPROFILE\.cache\torch\hub\facebookresearch_demucs_main\htdemucs_ft*" models\
-
+        Copy-Item -Path ".torch\hub\facebookresearch_demucs_main\htdemucs_ft*" -Destination "models\" -Recurse
+        
     - name: Build executable
       run: |
         pyinstaller --onefile `
@@ -38,7 +43,7 @@ jobs:
           demucs_exe.py
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4  # 更新到 v4 版本
+      uses: actions/upload-artifact@v4
       with:
         name: demucs-windows
         path: dist/demucs.exe
