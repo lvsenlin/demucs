@@ -10,29 +10,47 @@ import tempfile
 import shutil
 from pathlib import Path
 
-# 检查是否在PyInstaller打包环境中
+# 解决PyInstaller打包后的导入问题
 if getattr(sys, 'frozen', False):
-    # 获取资源目录（由PyInstaller创建）
-    resource_dir = Path(sys._MEIPASS) / 'demucs_resources'
-    
-    # 创建临时目录存放模型文件
-    temp_dir = Path(tempfile.mkdtemp())
-    
-    # 将资源文件复制到临时目录
-    for item in (resource_dir / 'pretrained').iterdir():
-        if item.is_file():
-            shutil.copy2(item, temp_dir / item.name)
-    
-    # 覆盖模型路径指向临时目录
-    sys.argv += ['--repo', str(temp_dir)]
-    
     # 添加必要的路径到系统路径
-    sys.path.insert(0, str(resource_dir))
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(current_dir)
-    sys.path.insert(0, parent_dir)
+    base_path = Path(sys._MEIPASS)
+    sys.path.insert(0, str(base_path))
+    
+    # 处理模型资源
+    resource_dir = base_path / 'demucs_resources'
+    if resource_dir.exists():
+        temp_dir = Path(tempfile.mkdtemp())
+        print(f"Created temp dir: {temp_dir}")
+        
+        # 复制模型文件
+        pretrained_dir = resource_dir / 'pretrained'
+        for item in pretrained_dir.iterdir():
+            if item.is_file():
+                shutil.copy2(item, temp_dir / item.name)
+                print(f"Copied: {item.name}")
+        
+        # 设置模型仓库参数
+        sys.argv += ['--repo', str(temp_dir)]
+    
+    # 添加demucs包路径
+    demucs_path = base_path / 'demucs'
+    if demucs_path.exists():
+        sys.path.insert(0, str(demucs_path))
+
+# 使用绝对导入
+try:
+    from demucs.api import Separator, save_audio, list_models
+    from demucs.apply import BagOfModels
+    from demucs.htdemucs import HTDemucs
+    from demucs.pretrained import add_model_flags, ModelLoadingError
+except ImportError as e:
+    print(f"Import error: {e}")
+    print("sys.path:", sys.path)
+    raise
 
 # 原始代码保持不变
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+
 
 
 
