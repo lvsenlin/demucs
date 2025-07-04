@@ -28,9 +28,14 @@ jobs:
 
     - name: Download model files
       run: |
+        # 创建资源目录
         mkdir -p packaging_resources/pretrained
+        
+        # 下载模型权重文件
         curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
-        copy demucs\pretrained\htdemucs_ft.json packaging_resources\pretrained\
+        
+        # 直接从GitHub下载配置文件
+        curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/pretrained/htdemucs_ft.json -o packaging_resources/pretrained/htdemucs_ft.json
 
     - name: Build executable
       run: |
