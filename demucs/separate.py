@@ -17,6 +17,8 @@ from .apply import BagOfModels
 from .htdemucs import HTDemucs
 from .pretrained import add_model_flags, ModelLoadingError
 
+import os  # 新增导入
+import sys  # 新增导入
 
 def get_parser():
     parser = argparse.ArgumentParser("demucs.separate",
@@ -100,8 +102,25 @@ def get_parser():
 
 
 def main(opts=None):
+    # 新增部分开始：处理打包环境下的模型路径
+    if getattr(sys, 'frozen', False):
+        # 获取exe解压目录
+        base_path = sys._MEIPASS
+        # 设置模型缓存路径到临时目录
+        os.environ['TORCH_HOME'] = os.path.join(base_path, 'torch_hub')
+        # 强制使用集成的htdemucs_ft模型
+        args.name = 'htdemucs_ft'
+        args.repo = 'facebookresearch/demucs'
+    # 新增部分结束
+    
     parser = get_parser()
     args = parser.parse_args(opts)
+    
+     # 新增：处理打包环境下列表模型请求
+    if args.list_models and getattr(sys, 'frozen', False):
+        print("Bundled model: htdemucs_ft")
+        sys.exit(0)
+    
     if args.list_models:
         models = list_models(args.repo)
         print("Bag of models:", end="\n    ")
@@ -148,7 +167,9 @@ def main(opts=None):
                 stem=args.stem, sources=", ".join(separator.model.sources)
             )
         )
-    out = args.out / args.name
+    # 修改输出路径处理部分
+    out = Path(args.out)  # 确保输出路径是Path对象
+    out = out / args.name
     out.mkdir(parents=True, exist_ok=True)
     print(f"Separated tracks will be stored in {out.resolve()}")
     for track in args.tracks:
