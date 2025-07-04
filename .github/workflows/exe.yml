@@ -3,6 +3,8 @@ name: Build Demucs Executable
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -11,54 +13,34 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install torch==2.1.0 torchaudio==2.1.0
-        pip install demucs==4.0.0 pyinstaller==6.0.0
-        
-    - name: Download models
+        pip install torch==1.13.1+cu117 torchaudio==0.13.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117
+        pip install demucs PyInstaller
+
+    - name: Download model files
       run: |
-        # 显式设置 Torch 缓存路径为当前目录
-        $env:TORCH_HUB = "$pwd\.torch_hub"
-        python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
-        # 验证下载
-        Write-Host "下载的模型文件:"
-        Get-ChildItem -Path .torch_hub -Recurse
-        
-    - name: Prepare models directory
-      run: |
-        # 创建 models 目录
-        mkdir models
-        # 直接复制模型文件（不依赖路径结构）
-        $modelPath = Get-ChildItem -Path .torch_hub -Recurse -Filter "htdemucs_ft*" | Select-Object -First 1
-        if ($modelPath) {
-            Copy-Item -Path $modelPath.FullName -Destination "models\" -Recurse
-            Write-Host "成功复制模型到 models 目录"
-        } else {
-            Write-Error "未找到模型文件"
-            exit 1
-        }
-        # 验证复制结果
-        Write-Host "models 目录内容:"
-        Get-ChildItem -Path models -Recurse
-        
+        mkdir -p packaging_resources/pretrained
+        curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
+        copy demucs\pretrained\htdemucs_ft.json packaging_resources\pretrained\
+
     - name: Build executable
       run: |
         pyinstaller --onefile `
-          --add-data "models;models" `
-          --name demucs.exe `
-          demucs_exe.py
+          --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
+          --name demucs `
+          demucs/separate.py
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
-        name: demucs-windows
+        name: demucs-exe
         path: dist/demucs.exe
