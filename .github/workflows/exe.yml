@@ -1,4 +1,4 @@
-name: Build Executable
+name: Build Demucs Executable
 
 on:
   push:
@@ -6,51 +6,37 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest]
+  build-windows-exe:
+    runs-on: windows-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install demucs pyinstaller torchaudio
-        # Windows额外依赖
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          pip install pywin32
-        fi
+        pip install torch==2.1.0 torchaudio==2.1.0
+        pip install demucs==4.0.0 pyinstaller==6.0.0
         
-    - name: Download model files
+    - name: Prepare models
       run: |
-        mkdir -p torch_hub/hub/checkpoints/htdemucs_ft
-        curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-04f11ae3.th -o torch_hub/hub/checkpoints/htdemucs_ft/checkpoint.th
-        curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/model.yaml -o torch_hub/hub/checkpoints/htdemucs_ft/model.yaml
-        curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/sources.yaml -o torch_hub/hub/checkpoints/htdemucs_ft/sources.yaml
-        
-    - name: Patch separate.py
-      run: |
-        # 应用必要的补丁（上面的修改内容）
-        # 这里实际使用时应该用sed等工具自动修改，或直接使用已修改的文件
-        
+        python prepare_models.py
+
     - name: Build executable
       run: |
-        pyinstaller --onefile \
-          --name "demucs_${{ matrix.os }}" \
-          --add-data "torch_hub:torch_hub" \
-          demucs/separate.py
-          
+        pyinstaller --onefile ^
+          --add-data "models;models" ^
+          --name demucs.exe ^
+          demucs_exe.py
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: demucs-${{ matrix.os }}
-        path: dist/
+        name: demucs-windows
+        path: dist/demucs.exe
