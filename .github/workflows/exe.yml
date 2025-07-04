@@ -18,32 +18,47 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install UPX (executable packer)
+    - name: Install UPX
       run: |
         Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v4.2.2/upx-4.2.2-win64.zip" -OutFile "upx.zip"
         Expand-Archive -Path "upx.zip" -DestinationPath "upx"
         Move-Item -Path "upx\upx-4.2.2-win64\upx.exe" -Destination "upx.exe"
         Remove-Item -Recurse -Force "upx", "upx.zip"
 
-    - name: Install dependencies (CPU-only)
+    - name: Install minimal dependencies
       run: |
         python -m pip install --upgrade pip
         pip install torch==2.3.0+cpu torchaudio==2.3.0+cpu --index-url https://download.pytorch.org/whl/cpu
-        pip install demucs PyInstaller
+        pip install demucs PyInstaller soundfile
         
-    - name: Download model files
+    - name: Prepare resources
       run: |
+        # 创建资源目录
         mkdir -p packaging_resources/pretrained
+        
+        # 下载模型文件
         curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
         curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/pretrained/htdemucs_ft.json -o packaging_resources/pretrained/htdemucs_ft.json
+        
+        # 复制整个demucs包
+        robocopy /E demucs packaging_resources/demucs
 
     - name: Build optimized executable
       run: |
-        # 使用UPX压缩可执行文件
         pyinstaller --onefile `
+          --add-data "packaging_resources/demucs;demucs" `
           --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
           --name demucs `
           --upx-dir . `
+          --exclude-module matplotlib `
+          --exclude-module scipy `
+          --exclude-module pandas `
+          --exclude-module sklearn `
+          --hidden-import "demucs" `
+          --hidden-import "demucs.api" `
+          --hidden-import "demucs.apply" `
+          --hidden-import "demucs.htdemucs" `
+          --hidden-import "demucs.pretrained" `
           --clean `
           demucs/separate.py
 
