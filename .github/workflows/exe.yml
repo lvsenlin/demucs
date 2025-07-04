@@ -26,14 +26,29 @@ jobs:
         
     - name: Download models
       run: |
-        # 显式设置 Torch 缓存路径
-        $env:TORCH_HOME = "$pwd\.torch"
+        # 显式设置 Torch 缓存路径为当前目录
+        $env:TORCH_HUB = "$pwd\.torch_hub"
         python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
+        # 验证下载
+        Write-Host "下载的模型文件:"
+        Get-ChildItem -Path .torch_hub -Recurse
         
     - name: Prepare models directory
       run: |
+        # 创建 models 目录
         mkdir models
-        Copy-Item -Path ".torch\hub\facebookresearch_demucs_main\htdemucs_ft*" -Destination "models\" -Recurse
+        # 直接复制模型文件（不依赖路径结构）
+        $modelPath = Get-ChildItem -Path .torch_hub -Recurse -Filter "htdemucs_ft*" | Select-Object -First 1
+        if ($modelPath) {
+            Copy-Item -Path $modelPath.FullName -Destination "models\" -Recurse
+            Write-Host "成功复制模型到 models 目录"
+        } else {
+            Write-Error "未找到模型文件"
+            exit 1
+        }
+        # 验证复制结果
+        Write-Host "models 目录内容:"
+        Get-ChildItem -Path models -Recurse
         
     - name: Build executable
       run: |
