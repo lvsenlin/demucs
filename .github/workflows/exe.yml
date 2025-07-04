@@ -40,8 +40,8 @@ jobs:
         curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
         curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/pretrained/htdemucs_ft.json -o packaging_resources/pretrained/htdemucs_ft.json
         
-        # 复制整个demucs包
-        robocopy /E demucs packaging_resources/demucs
+        # 复制整个demucs包（忽略robocopy的退出码）
+        robocopy /E demucs packaging_resources/demucs || echo "Robocopy completed with warnings"
 
     - name: Build optimized executable
       run: |
