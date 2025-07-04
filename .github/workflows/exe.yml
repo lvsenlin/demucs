@@ -197,14 +197,14 @@ jobs:
           echo. >> dist\demucs-cpu.bat
           echo REM Verify output directory >> dist\demucs-cpu.bat
           echo echo. >> dist\demucs-cpu.bat
-          echo echo ===== OUTPUT DIRECTORY VERIFICATION ===== >> dist\demucs-cpu.bat
+          echo echo [OUTPUT DIRECTORY VERIFICATION] >> dist\demucs-cpu.bat  # 移除了 # 字符
           echo if exist "!WORKDIR!separated\" ( >> dist\demucs-cpu.bat
           echo   echo Directory exists: !WORKDIR!separated >> dist\demucs-cpu.bat
           echo   echo Directory contents: >> dist\demucs-cpu.bat
           echo   dir /b "!WORKDIR!separated" >> dist\demucs-cpu.bat
           echo ) else ( >> dist\demucs-cpu.bat
           echo   echo Directory does not exist: !WORKDIR!separated >> dist\demucs-cpu.bat
-          echo ) >> dist\demucs-cpu.bat  # 修正此行路径
+          echo ) >> dist\demucs-cpu.bat
           echo. >> dist\demucs-cpu.bat
           echo REM Check exit code and show message >> dist\demucs-cpu.bat
           echo if !EXITCODE! equ 0 ( >> dist\demucs-cpu.bat
