@@ -4,6 +4,30 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+# 在文件顶部添加以下代码
+import sys
+import os
+import tempfile
+import shutil
+from pathlib import Path
+
+# 检查是否在PyInstaller打包环境中
+if getattr(sys, 'frozen', False):
+    # 获取资源目录（由PyInstaller创建）
+    resource_dir = Path(sys._MEIPASS) / 'demucs_resources'
+
+    # 创建临时目录存放模型文件
+    temp_dir = Path(tempfile.mkdtemp())
+
+    # 将资源文件复制到临时目录
+    for item in (resource_dir / 'pretrained').iterdir():
+        if item.is_file():
+            shutil.copy2(item, temp_dir / item.name)
+
+    # 覆盖模型路径指向临时目录
+    sys.argv += ['--repo', str(temp_dir)]
+
+
 import argparse
 import sys
 from pathlib import Path
