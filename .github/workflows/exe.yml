@@ -42,13 +42,8 @@ jobs:
         # 使用UPX压缩可执行文件
         pyinstaller --onefile `
           --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
-          --add-data "demucs;demucs" `
           --name demucs `
           --upx-dir . `
-          --exclude-module torch `
-          --exclude-module torchvision `
-          --exclude-module torchaudio `
-          --exclude-module numpy `
           --clean `
           demucs/separate.py
 
