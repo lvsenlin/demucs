@@ -20,14 +20,14 @@ if getattr(sys, 'frozen', False):
     resource_dir = base_path / 'demucs_resources'
     if resource_dir.exists():
         temp_dir = Path(tempfile.mkdtemp())
-        print(f"Created temp dir: {temp_dir}")
+        print(f"[INFO] Created temp model dir: {temp_dir}")
         
         # 复制模型文件
         pretrained_dir = resource_dir / 'pretrained'
         for item in pretrained_dir.iterdir():
             if item.is_file():
                 shutil.copy2(item, temp_dir / item.name)
-                print(f"Copied: {item.name}")
+                print(f"[INFO] Copied model file: {item.name}")
         
         # 设置模型仓库参数
         sys.argv += ['--repo', str(temp_dir)]
@@ -36,6 +36,7 @@ if getattr(sys, 'frozen', False):
     demucs_path = base_path / 'demucs'
     if demucs_path.exists():
         sys.path.insert(0, str(demucs_path))
+        print(f"[INFO] Added demucs path: {demucs_path}")
 
 # 使用绝对导入
 try:
@@ -43,13 +44,15 @@ try:
     from demucs.apply import BagOfModels
     from demucs.htdemucs import HTDemucs
     from demucs.pretrained import add_model_flags, ModelLoadingError
+    print("[INFO] Successfully imported demucs modules")
 except ImportError as e:
-    print(f"Import error: {e}")
-    print("sys.path:", sys.path)
+    print(f"[ERROR] Import failed: {e}")
+    print("[DEBUG] sys.path:", sys.path)
     raise
 
 # 原始代码保持不变
 # Copyright (c) Meta Platforms, Inc. and affiliates.
+
 
 
 
