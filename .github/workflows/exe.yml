@@ -3,8 +3,6 @@ name: Build Demucs Executable
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -20,28 +18,38 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
+    - name: Install UPX (executable packer)
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v4.2.2/upx-4.2.2-win64.zip" -OutFile "upx.zip"
+        Expand-Archive -Path "upx.zip" -DestinationPath "upx"
+        Move-Item -Path "upx\upx-4.2.2-win64\upx.exe" -Destination "upx.exe"
+        Remove-Item -Recurse -Force "upx", "upx.zip"
+
+    - name: Install dependencies (CPU-only)
       run: |
         python -m pip install --upgrade pip
-        pip install torch==2.3.0+cu121 torchaudio==2.3.0+cu121 --index-url https://download.pytorch.org/whl/cu121
+        pip install torch==2.3.0+cpu torchaudio==2.3.0+cpu --index-url https://download.pytorch.org/whl/cpu
         pip install demucs PyInstaller
-
+        
     - name: Download model files
       run: |
-        # 创建资源目录
         mkdir -p packaging_resources/pretrained
-        
-        # 下载模型权重文件
         curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
-        
-        # 直接从GitHub下载配置文件
         curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/pretrained/htdemucs_ft.json -o packaging_resources/pretrained/htdemucs_ft.json
 
-    - name: Build executable
+    - name: Build optimized executable
       run: |
+        # 使用UPX压缩可执行文件
         pyinstaller --onefile `
           --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
+          --add-data "demucs;demucs" `
           --name demucs `
+          --upx-dir . `
+          --exclude-module torch `
+          --exclude-module torchvision `
+          --exclude-module torchaudio `
+          --exclude-module numpy `
+          --clean `
           demucs/separate.py
 
     - name: Upload artifact
