@@ -34,14 +34,14 @@ jobs:
 
     - name: Build executable
       run: |
-        pyinstaller --onefile `
-          --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
-          --add-data "demucs;demucs" `
-          --name demucs `
-          --hidden-import demucs.api `
-          --hidden-import demucs.apply `
-          --hidden-import demucs.htdemucs `
-          --hidden-import demucs.pretrained `
+        pyinstaller --onefile ^
+          --add-data "packaging_resources/pretrained;demucs_resources/pretrained" ^
+          --add-data "demucs;demucs" ^
+          --name demucs ^
+          --hidden-import demucs.api ^
+          --hidden-import demucs.apply ^
+          --hidden-import demucs.htdemucs ^
+          --hidden-import demucs.pretrained ^
           demucs/separate.py
 
     - name: Upload artifact
