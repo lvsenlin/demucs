@@ -10,66 +10,34 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
+    - uses: actions/checkout@v3
+
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.10'
-        
+        python-version: '3.9'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller torch torchaudio demucs
-        
-    - name: Download model with explicit cache path
+        pip install torch==1.10.0 torchaudio==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pyinstaller
+        pip install .
+
+    - name: Prepare model files
       run: |
-        # 创建明确的缓存目录
-        $cachePath = "$env:RUNNER_TEMP\torch_cache"
-        New-Item -ItemType Directory -Path $cachePath -Force
-        
-        # 设置环境变量
-        $env:TORCH_HOME = $cachePath
-        
-        # 下载模型
-        python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
-        
-        # 验证下载
-        $modelPath = "$cachePath\hub\checkpoints\htdemucs_ft"
-        if (Test-Path -Path $modelPath) {
-          echo "Model downloaded successfully to $modelPath"
-          Get-ChildItem -Path $modelPath
-        } else {
-          echo "::error::Model download failed!"
-          exit 1
-        }
-        
-    - name: Prepare models
+        mkdir -p model_files/htdemucs_ft
+        curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-04cc4a0e.th -o model_files/htdemucs_ft/checkpoint.th
+        # 生成简化的 model.yaml
+        echo "sources: [drums, bass, other, vocals]" > model_files/htdemucs_ft/model.yaml
+        echo "samplerate: 44100" >> model_files/htdemucs_ft/model.yaml
+
+    - name: Build with PyInstaller
       run: |
-        $cachePath = "$env:RUNNER_TEMP\torch_cache"
-        $modelPath = "$cachePath\hub\checkpoints\htdemucs_ft"
-        New-Item -ItemType Directory -Path "models" -Force
-        Copy-Item -Path "$modelPath\*" -Destination "models\" -Recurse
-        echo "Copied model files:"
-        Get-ChildItem -Path "models"
-        
-    - name: Build executable
-      run: |
-        pyinstaller --noconfirm --onefile --console `
-          --name "demucs" `
-          --add-data "models;models" `
-          --hidden-import "demucs" `
-          --hidden-import "demucs.apply" `
-          --hidden-import "demucs.htdemucs" `
-          --hidden-import "demucs.pretrained" `
-          --hidden-import "dora.log" `
-          --hidden-import "torch" `
-          --hidden-import "torchaudio" `
-          demucs/separate.py
-        
+        pyinstaller build.spec
+
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
-        name: demucs_executable
-        path: dist/demucs.exe
+        name: demucs_gui
+        path: dist/demucs_gui.exe
