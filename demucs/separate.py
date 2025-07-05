@@ -30,27 +30,30 @@ from pathlib import Path
 import tempfile
 
 def extract_models():
-    """将内置模型资源解压到临时目录"""
     if getattr(sys, 'frozen', False):
         try:
-            # 获取临时目录
             temp_dir = Path(tempfile.gettempdir()) / "demucs_models"
             temp_dir.mkdir(parents=True, exist_ok=True)
-
-            # 检查是否已解压
+            
+            # 优先检查 htdemucs_ft 目录
             if not (temp_dir / "htdemucs_ft").exists():
-                # 获取资源路径 (PyInstaller 创建的临时目录)
                 base_path = Path(sys._MEIPASS)
+                
+                # 检查两种可能的路径结构
                 model_src = base_path / "models"
-
-                # 复制模型
-                shutil.copytree(
-                    model_src,
-                    temp_dir,
-                    dirs_exist_ok=True
-                )
-                print(f"Models extracted to {temp_dir}")
-
+                if not model_src.exists():
+                    model_src = base_path / "models" / "htdemucs_ft"
+                
+                if model_src.exists():
+                    shutil.copytree(
+                        model_src, 
+                        temp_dir,
+                        dirs_exist_ok=True
+                    )
+                    print(f"Models extracted to {temp_dir}")
+                else:
+                    print(f"Model source not found in: {model_src}")
+            
             return str(temp_dir)
         except Exception as e:
             print(f"Error extracting models: {e}")
