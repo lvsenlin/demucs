@@ -62,6 +62,7 @@ jobs:
           --hidden-import "demucs.apply" `
           --hidden-import "demucs.htdemucs" `
           --hidden-import "demucs.pretrained" `
+          --hidden-import "demucs.states" `  # 添加states模块
           --clean `
           --noconfirm `
           demucs/separate.py
