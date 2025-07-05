@@ -29,7 +29,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install torch==2.3.0+cpu torchaudio==2.3.0+cpu --index-url https://download.pytorch.org/whl/cpu
-        pip install demucs PyInstaller soundfile
+        pip install PyInstaller soundfile
         
     - name: Prepare resources
       run: |
@@ -45,29 +45,8 @@ jobs:
 
     - name: Build optimized executable
       run: |
-        # 使用PyInstaller构建（避免使用反引号）
-        pyinstaller --onefile `
-          --add-data "packaging_resources/demucs;demucs" `
-          --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
-          --name demucs `
-          --upx-dir . `
-          --exclude-module matplotlib `
-          --exclude-module scipy `
-          --exclude-module pandas `
-          --exclude-module sklearn `
-          --exclude-module tensorflow `
-          --exclude-module keras `
-          --hidden-import "demucs" `
-          --hidden-import "demucs.api" `
-          --hidden-import "demucs.apply" `
-          --hidden-import "demucs.htdemucs" `
-          --hidden-import "demucs.pretrained" `
-          --hidden-import "demucs.states" `
-          --clean `
-          --noconfirm `
-          demucs/separate.py
-        # 或者使用单行命令
-        # pyinstaller --onefile --add-data "packaging_resources/demucs;demucs" --add-data "packaging_resources/pretrained;demucs_resources/pretrained" --name demucs --upx-dir . --exclude-module matplotlib --exclude-module scipy --exclude-module pandas --exclude-module sklearn --exclude-module tensorflow --exclude-module keras --hidden-import "demucs" --hidden-import "demucs.api" --hidden-import "demucs.apply" --hidden-import "demucs.htdemucs" --hidden-import "demucs.pretrained" --hidden-import "demucs.states" --clean --noconfirm demucs/separate.py
+        # 使用单行命令避免解析问题
+        pyinstaller --onefile --add-data "packaging_resources/demucs;demucs" --add-data "packaging_resources/pretrained;demucs_resources/pretrained" --name demucs --upx-dir . --exclude-module matplotlib --exclude-module scipy --exclude-module pandas --exclude-module sklearn --exclude-module tensorflow --exclude-module keras --clean --noconfirm demucs/separate.py
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
