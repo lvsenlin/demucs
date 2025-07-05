@@ -2,8 +2,8 @@ name: Build Windows Executable
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,42 +12,44 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-
+      
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-
+        python-version: '3.9'
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install torch==2.0.1 torchaudio==2.0.2
-        pip install demucs==4.0.0
-        pip install pyinstaller==5.13.0
-        pip install soundfile==0.12.1
-
-    - name: Download htdemucs_ft model
+        pip install pyinstaller torch torchaudio
+        pip install demucs
+        
+    - name: Download model
       run: |
         python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
-        mkdir -p models/htdemucs_ft
-        copy "%USERPROFILE%\.cache\torch\hub\checkpoints\htdemucs_ft\*" models/htdemucs_ft
-
+        
+    - name: Prepare models
+      run: |
+        $modelPath = "$env:USERPROFILE\.cache\torch\hub\checkpoints\htdemucs_ft"
+        New-Item -ItemType Directory -Path "models" -Force
+        Copy-Item -Path "$modelPath\*" -Destination "models\" -Recurse
+        
     - name: Build executable
       run: |
-        pyinstaller --onefile ^
-          --name demucs.exe ^
+        pyinstaller --noconfirm --onefile --console ^
+          --name "demucs" ^
           --add-data "models;models" ^
-          --hidden-import="demucs" ^
-          --hidden-import="demucs.apply" ^
-          --hidden-import="demucs.htdemucs" ^
-          --hidden-import="demucs.pretrained" ^
-          --hidden-import="demucs.api" ^
-          --hidden-import="soundfile" ^
-          --hidden-import="torch" ^
+          --hidden-import "demucs" ^
+          --hidden-import "demucs.apply" ^
+          --hidden-import "demucs.htdemucs" ^
+          --hidden-import "demucs.pretrained" ^
+          --hidden-import "dora.log" ^
+          --hidden-import "torch" ^
+          --hidden-import "torchaudio" ^
           demucs/separate.py
-
+        
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: demucs-binaries
+        name: demucs_executable
         path: dist/demucs.exe
