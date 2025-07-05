@@ -45,7 +45,7 @@ jobs:
 
     - name: Build optimized executable
       run: |
-        # 使用PyInstaller构建
+        # 使用PyInstaller构建（避免使用反引号）
         pyinstaller --onefile `
           --add-data "packaging_resources/demucs;demucs" `
           --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
@@ -62,10 +62,12 @@ jobs:
           --hidden-import "demucs.apply" `
           --hidden-import "demucs.htdemucs" `
           --hidden-import "demucs.pretrained" `
-          --hidden-import "demucs.states" `  # 添加states模块
+          --hidden-import "demucs.states" `
           --clean `
           --noconfirm `
           demucs/separate.py
+        # 或者使用单行命令
+        # pyinstaller --onefile --add-data "packaging_resources/demucs;demucs" --add-data "packaging_resources/pretrained;demucs_resources/pretrained" --name demucs --upx-dir . --exclude-module matplotlib --exclude-module scipy --exclude-module pandas --exclude-module sklearn --exclude-module tensorflow --exclude-module keras --hidden-import "demucs" --hidden-import "demucs.api" --hidden-import "demucs.apply" --hidden-import "demucs.htdemucs" --hidden-import "demucs.pretrained" --hidden-import "demucs.states" --clean --noconfirm demucs/separate.py
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
