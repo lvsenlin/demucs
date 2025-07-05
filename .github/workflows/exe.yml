@@ -23,15 +23,36 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller torch torchaudio demucs
         
-    - name: Download model
+    - name: Download model with explicit cache path
       run: |
+        # 创建明确的缓存目录
+        $cachePath = "$env:RUNNER_TEMP\torch_cache"
+        New-Item -ItemType Directory -Path $cachePath -Force
+        
+        # 设置环境变量
+        $env:TORCH_HOME = $cachePath
+        
+        # 下载模型
         python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
+        
+        # 验证下载
+        $modelPath = "$cachePath\hub\checkpoints\htdemucs_ft"
+        if (Test-Path -Path $modelPath) {
+          echo "Model downloaded successfully to $modelPath"
+          Get-ChildItem -Path $modelPath
+        } else {
+          echo "::error::Model download failed!"
+          exit 1
+        }
         
     - name: Prepare models
       run: |
-        $modelPath = "$env:USERPROFILE\.cache\torch\hub\checkpoints\htdemucs_ft"
+        $cachePath = "$env:RUNNER_TEMP\torch_cache"
+        $modelPath = "$cachePath\hub\checkpoints\htdemucs_ft"
         New-Item -ItemType Directory -Path "models" -Force
         Copy-Item -Path "$modelPath\*" -Destination "models\" -Recurse
+        echo "Copied model files:"
+        Get-ChildItem -Path "models"
         
     - name: Build executable
       run: |
