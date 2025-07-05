@@ -31,43 +31,16 @@ if getattr(sys, 'frozen', False):
         
         # 设置模型仓库参数
         sys.argv += ['--repo', str(temp_dir)]
-    
-    # 添加demucs包路径
-    demucs_path = base_path / 'demucs'
-    if demucs_path.exists():
-        sys.path.insert(0, str(demucs_path))
-        print(f"[INFO] Added demucs path: {demucs_path}")
-    
-    # 设置包名环境变量，解决相对导入问题
-    os.environ["__PACKAGE__"] = "demucs"
 
 # 使用绝对导入
-try:
-    from demucs.api import Separator, save_audio, list_models
-    from demucs.apply import BagOfModels
-    from demucs.htdemucs import HTDemucs
-    from demucs.pretrained import add_model_flags, ModelLoadingError
-    print("[INFO] Successfully imported demucs modules")
-except ImportError as e:
-    print(f"[ERROR] Import failed: {e}")
-    print("[DEBUG] sys.path:", sys.path)
-    
-    # 尝试手动设置包名
-    try:
-        import demucs
-        sys.modules[__name__].__package__ = "demucs"
-        from .api import Separator, save_audio, list_models
-        from .apply import BagOfModels
-        from .htdemucs import HTDemucs
-        from .pretrained import add_model_flags, ModelLoadingError
-        print("[INFO] Successfully imported using relative imports with manual package setup")
-    except Exception as rel_error:
-        print(f"[ERROR] Relative import failed: {rel_error}")
-        print("[DEBUG] sys.path:", sys.path)
-        raise
+from demucs.api import Separator, save_audio, list_models
+from demucs.apply import BagOfModels
+from demucs.htdemucs import HTDemucs
+from demucs.pretrained import add_model_flags, ModelLoadingError
 
 # 原始代码保持不变
 # Copyright (c) Meta Platforms, Inc. and affiliates.
+
 
 
 
