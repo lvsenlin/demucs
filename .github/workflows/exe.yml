@@ -40,11 +40,12 @@ jobs:
         curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
         curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/pretrained/htdemucs_ft.json -o packaging_resources/pretrained/htdemucs_ft.json
         
-        # 复制整个demucs包（忽略robocopy的退出码）
-        robocopy /E demucs packaging_resources/demucs || echo "Robocopy completed with warnings"
+        # 使用PowerShell复制整个demucs包
+        Copy-Item -Path "demucs" -Destination "packaging_resources\demucs" -Recurse -Force
 
     - name: Build optimized executable
       run: |
+        # 使用PyInstaller构建
         pyinstaller --onefile `
           --add-data "packaging_resources/demucs;demucs" `
           --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
@@ -54,12 +55,15 @@ jobs:
           --exclude-module scipy `
           --exclude-module pandas `
           --exclude-module sklearn `
+          --exclude-module tensorflow `
+          --exclude-module keras `
           --hidden-import "demucs" `
           --hidden-import "demucs.api" `
           --hidden-import "demucs.apply" `
           --hidden-import "demucs.htdemucs" `
           --hidden-import "demucs.pretrained" `
           --clean `
+          --noconfirm `
           demucs/separate.py
 
     - name: Upload artifact
