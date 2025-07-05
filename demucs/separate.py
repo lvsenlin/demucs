@@ -4,58 +4,6 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-# 在文件顶部添加以下代码
-import sys
-import os
-from pathlib import Path
-
-# 修复PyInstaller打包时的导入问题
-if getattr(sys, 'frozen', False):
-    # 添加当前执行文件所在目录到sys.path
-    base_dir = Path(sys.executable).parent
-    sys.path.insert(0, str(base_dir))
-    
-    # 添加资源目录到sys.path
-    if hasattr(sys, '_MEIPASS'):
-        sys.path.insert(0, sys._MEIPASS)
-    
-    # 确保demucs模块可以被导入
-    demucs_dir = base_dir / 'demucs'
-    if demucs_dir.exists():
-        sys.path.insert(0, str(demucs_dir))
-
-# 修改所有相对导入为绝对导入
-try:
-    from demucs.api import Separator, save_audio, list_models
-    from demucs.apply import BagOfModels
-    from demucs.htdemucs import HTDemucs
-    from demucs.pretrained import add_model_flags, ModelLoadingError
-except ImportError:
-    # 回退方案，确保在开发环境中也能工作
-    from .api import Separator, save_audio, list_models
-    from .apply import BagOfModels
-    from .htdemucs import HTDemucs
-    from .pretrained import add_model_flags, ModelLoadingError
-
-# 原始代码保持不变
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import argparse
 import sys
 from pathlib import Path
