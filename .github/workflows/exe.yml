@@ -3,6 +3,8 @@ name: Build Demucs Executable
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -18,51 +20,28 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install UPX
+    - name: Install dependencies
       run: |
-        Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v4.2.2/upx-4.2.2-win64.zip" -OutFile "upx.zip"
-        Expand-Archive -Path "upx.zip" -DestinationPath "upx"
-        Move-Item -Path "upx\upx-4.2.2-win64\upx.exe" -Destination "upx.exe"
-        Remove-Item -Recurse -Force "upx", "upx.zip"
-
-    - name: Install full dependencies with workaround
-      run: |
-        # 设置环境变量绕过sklearn检查
-        $env:SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL = "True"
-        
         python -m pip install --upgrade pip
-        pip install torch==2.3.0+cpu torchaudio==2.3.0+cpu --index-url https://download.pytorch.org/whl/cpu
-        pip install demucs PyInstaller soundfile numpy dora scikit-learn
-        
-    - name: Prepare resources
+        pip install torch==2.3.0+cu121 torchaudio==2.3.0+cu121 --index-url https://download.pytorch.org/whl/cu121
+        pip install demucs PyInstaller
+
+    - name: Download model files
       run: |
-        # 创建资源目录
         mkdir -p packaging_resources/pretrained
-        
-        # 下载模型文件
         curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
         curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/pretrained/htdemucs_ft.json -o packaging_resources/pretrained/htdemucs_ft.json
-        
-        # 使用PowerShell复制整个demucs包
-        Copy-Item -Path "demucs" -Destination "packaging_resources\demucs" -Recurse -Force
 
-    - name: Build optimized executable
+    - name: Build executable
       run: |
-        # 使用单行命令避免解析问题
         pyinstaller --onefile `
-          --add-data "packaging_resources/demucs;demucs" `
           --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
+          --add-data "demucs;demucs" `  # 添加这一行确保demucs模块被打包
           --name demucs `
-          --upx-dir . `
-          --hidden-import "numpy" `
-          --hidden-import "dora" `
-          --hidden-import "torch" `
-          --hidden-import "torchaudio" `
-          --hidden-import "soundfile" `
-          --hidden-import "scipy" `
-          --hidden-import "sklearn" `  # 显式包含sklearn
-          --clean `
-          --noconfirm `
+          --hidden-import demucs.api `
+          --hidden-import demucs.apply `
+          --hidden-import demucs.htdemucs `
+          --hidden-import demucs.pretrained `
           demucs/separate.py
 
     - name: Upload artifact
