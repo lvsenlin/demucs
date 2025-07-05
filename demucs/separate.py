@@ -114,7 +114,7 @@ def main(opts=None):
     parser = get_parser()
     args = parser.parse_args(opts)
     
-    # 处理模型路径（关键修改）
+    ## 处理模型路径（关键修改）
     if args.name == "htdemucs_ft":
         args.repo = get_model_path("htdemucs_ft")
 
