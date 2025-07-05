@@ -1,42 +1,79 @@
-name: Build Demucs Executable
+name: Build Windows Executable
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  build-windows-exe:
+  build:
     runs-on: windows-latest
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install torch==2.3.0+cu121 torchaudio==2.3.0+cu121 --index-url https://download.pytorch.org/whl/cu121
-        pip install demucs PyInstaller
+        pip install torch==2.0.1 torchaudio==2.0.2
+        pip install demucs==4.0.1 pyinstaller==5.13.0
+        pip install soundfile
 
-    - name: Download model files
+    - name: Download model
       run: |
-        mkdir -p packaging_resources/pretrained
-        curl -L https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/htdemucs_ft-4d8d2c3f.pth -o packaging_resources/pretrained/htdemucs_ft.pth
-        curl -L https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/pretrained/htdemucs_ft.json -o packaging_resources/pretrained/htdemucs_ft.json
+        python -c "from demucs.pretrained import get_model; get_model('htdemucs_ft')"
+
+    - name: Create model bundle
+      run: |
+        $cacheDir = "$env:USERPROFILE\.cache\torch\hub\demucs"
+        New-Item -ItemType Directory -Path "bundle\models" -Force
+        Copy-Item "$cacheDir\htdemucs_ft\*" -Destination "bundle\models" -Recurse
+        Copy-Item "demucs/separate.py" -Destination "bundle"
+
+    - name: Create entry script
+      run: |
+        Set-Content -Path "bundle\demucs_main.py" -Value @'
+import os
+import sys
+from pathlib import Path
+from demucs.separate import main
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+# 设置模型路径
+os.environ["DEMUCS_REPO"] = resource_path("models")
+
+# 覆盖模型参数
+def override_arguments():
+    if "-n" not in sys.argv and "--name" not in sys.argv:
+        sys.argv.extend(["-n", "htdemucs_ft"])
+
+override_arguments()
+main()
+'@
 
     - name: Build executable
-      run: pyinstaller --onefile --add-data "packaging_resources/pretrained;demucs_resources/pretrained" --add-data "demucs;demucs" --name demucs --hidden-import demucs.api --hidden-import demucs.apply --hidden-import demucs.htdemucs --hidden-import demucs.pretrained demucs/separate.py
+      run: |
+        pyinstaller --onefile `
+          --add-data "bundle/models;models" `
+          --name demucs `
+          --console `
+          --distpath dist `
+          bundle/demucs_main.py
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
-        name: demucs-exe
+        name: demucs-bin
         path: dist/demucs.exe
