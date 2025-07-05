@@ -20,28 +20,28 @@ from .pretrained import add_model_flags, ModelLoadingError
 
 
 
+
+
 # 在文件顶部添加以下代码
 import os
 import sys
+import shutil
+from pathlib import Path
+import tempfile
 
-# 添加资源解压函数
 def extract_models():
     """将内置模型资源解压到临时目录"""
-    import tempfile
-    import shutil
-    from pathlib import Path
-
     if getattr(sys, 'frozen', False):
-        # 获取临时目录
-        temp_dir = Path(tempfile.gettempdir()) / "demucs_models"
-        temp_dir.mkdir(exist_ok=True)
+        try:
+            # 获取临时目录
+            temp_dir = Path(tempfile.gettempdir()) / "demucs_models"
+            temp_dir.mkdir(parents=True, exist_ok=True)
 
-        # 检查是否已解压
-        if not (temp_dir / "htdemucs_ft").exists():
-            try:
-                # 获取资源路径
-                base_path = sys._MEIPASS
-                model_src = Path(base_path) / "models"
+            # 检查是否已解压
+            if not (temp_dir / "htdemucs_ft").exists():
+                # 获取资源路径 (PyInstaller 创建的临时目录)
+                base_path = Path(sys._MEIPASS)
+                model_src = base_path / "models"
 
                 # 复制模型
                 shutil.copytree(
@@ -49,13 +49,13 @@ def extract_models():
                     temp_dir,
                     dirs_exist_ok=True
                 )
-            except Exception as e:
-                print(f"Error extracting models: {e}")
+                print(f"Models extracted to {temp_dir}")
 
-        return str(temp_dir)
+            return str(temp_dir)
+        except Exception as e:
+            print(f"Error extracting models: {e}")
+            return None
     return None
-
-
 
 
 
@@ -140,20 +140,22 @@ def get_parser():
     return parser
 
 
-# 在 main() 函数开头添加资源处理
+# 修改 main() 函数开头
 def main(opts=None):
     # 解压模型资源
     local_repo = extract_models()
 
-    # 原始代码保持不变...
     parser = get_parser()
     args = parser.parse_args(opts)
 
     # 如果使用默认模型且已解压资源
     if args.name == 'htdemucs_ft' and local_repo:
         args.repo = local_repo
+        if args.verbose:
+            print(f"Using extracted models from {local_repo}")
 
     # 原始代码继续...
+
 
     
     if args.list_models:
