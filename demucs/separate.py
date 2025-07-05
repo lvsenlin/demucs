@@ -99,9 +99,26 @@ def get_parser():
     return parser
 
 
+# 添加资源处理函数
+def get_model_path(model_name):
+    """获取嵌入模型路径"""
+    if getattr(sys, 'frozen', False):  # 判断是否在PyInstaller打包环境中
+        base_path = Path(sys._MEIPASS)
+    else:
+        base_path = Path(__file__).parent.parent
+        
+    model_path = base_path / "models" / model_name
+    return model_path
+
 def main(opts=None):
     parser = get_parser()
     args = parser.parse_args(opts)
+    
+    # 处理模型路径（关键修改）
+    if args.name == "htdemucs_ft":
+        args.repo = get_model_path("htdemucs_ft")
+
+    
     if args.list_models:
         models = list_models(args.repo)
         print("Bag of models:", end="\n    ")
