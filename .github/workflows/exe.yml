@@ -25,11 +25,14 @@ jobs:
         Move-Item -Path "upx\upx-4.2.2-win64\upx.exe" -Destination "upx.exe"
         Remove-Item -Recurse -Force "upx", "upx.zip"
 
-    - name: Install full dependencies
+    - name: Install full dependencies with workaround
       run: |
+        # 设置环境变量绕过sklearn检查
+        $env:SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL = "True"
+        
         python -m pip install --upgrade pip
         pip install torch==2.3.0+cpu torchaudio==2.3.0+cpu --index-url https://download.pytorch.org/whl/cpu
-        pip install demucs PyInstaller soundfile numpy dora scikit-learn  # 使用正确的包名
+        pip install demucs PyInstaller soundfile numpy dora scikit-learn
         
     - name: Prepare resources
       run: |
@@ -57,6 +60,7 @@ jobs:
           --hidden-import "torchaudio" `
           --hidden-import "soundfile" `
           --hidden-import "scipy" `
+          --hidden-import "sklearn" `  # 显式包含sklearn
           --clean `
           --noconfirm `
           demucs/separate.py
