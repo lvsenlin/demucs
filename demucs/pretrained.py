@@ -61,6 +61,12 @@ def get_model(name: str,
     """`name` must be a bag of models name or a pretrained signature
     from the remote AWS model repo or the specified local repo if `repo` is not None.
     """
+    
+    # 在 get_model 函数开头添加
+    if "DEMUCS_REPO" in os.environ:
+        repo = Path(os.environ["DEMUCS_REPO"])
+
+                  
     if name == 'demucs_unittest':
         return demucs_unittest()
     model_repo: ModelOnlyRepo
