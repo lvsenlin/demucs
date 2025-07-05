@@ -36,7 +36,7 @@ jobs:
       run: |
         pyinstaller --onefile `
           --add-data "packaging_resources/pretrained;demucs_resources/pretrained" `
-          --add-data "demucs;demucs" `  # 添加这一行确保demucs模块被打包
+          --add-data "demucs;demucs" `
           --name demucs `
           --hidden-import demucs.api `
           --hidden-import demucs.apply `
