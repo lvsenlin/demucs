@@ -18,47 +18,37 @@ from .htdemucs import HTDemucs
 from .pretrained import add_model_flags, ModelLoadingError
 
 
-
-
-
-
-# 在文件顶部添加以下代码
-import os
+# 在文件开头添加以下代码
 import sys
-import shutil
+import os
 from pathlib import Path
 import tempfile
 
+# 资源解压函数
 def extract_models():
-    if getattr(sys, 'frozen', False):
-        try:
-            temp_dir = Path(tempfile.gettempdir()) / "demucs_models"
-            temp_dir.mkdir(parents=True, exist_ok=True)
-            
-            # 优先检查 htdemucs_ft 目录
-            if not (temp_dir / "htdemucs_ft").exists():
-                base_path = Path(sys._MEIPASS)
-                
-                # 检查两种可能的路径结构
-                model_src = base_path / "models"
-                if not model_src.exists():
-                    model_src = base_path / "models" / "htdemucs_ft"
-                
-                if model_src.exists():
-                    shutil.copytree(
-                        model_src, 
-                        temp_dir,
-                        dirs_exist_ok=True
-                    )
-                    print(f"Models extracted to {temp_dir}")
-                else:
-                    print(f"Model source not found in: {model_src}")
-            
-            return str(temp_dir)
-        except Exception as e:
-            print(f"Error extracting models: {e}")
-            return None
-    return None
+    """将内嵌模型资源解压到临时目录"""
+    temp_dir = Path(tempfile.mkdtemp(prefix="demucs_models_"))
+    model_files = {
+        'checkpoint.th': b'...',  # 这里填入模型文件的二进制内容
+        'model.yaml': b'...'     # 这里填入YAML配置的二进制内容
+    }
+
+    model_path = temp_dir / "htdemucs_ft"
+    model_path.mkdir()
+
+    for name, data in model_files.items():
+        with open(model_path / name, 'wb') as f:
+            f.write(data)
+
+    return temp_dir
+
+# 检查是否是PyInstaller打包环境
+if getattr(sys, 'frozen', False):
+    # 解压内嵌资源并设置模型路径
+    MODEL_TEMP_DIR = extract_models()
+    os.environ["DEMUCS_REPO"] = str(MODEL_TEMP_DIR)
+
+# ... 原有代码保持不变 ...
 
 
 
@@ -143,24 +133,9 @@ def get_parser():
     return parser
 
 
-# 修改 main() 函数开头
 def main(opts=None):
-    # 解压模型资源
-    local_repo = extract_models()
-
     parser = get_parser()
     args = parser.parse_args(opts)
-
-    # 如果使用默认模型且已解压资源
-    if args.name == 'htdemucs_ft' and local_repo:
-        args.repo = local_repo
-        if args.verbose:
-            print(f"Using extracted models from {local_repo}")
-
-    # 原始代码继续...
-
-
-    
     if args.list_models:
         models = list_models(args.repo)
         print("Bag of models:", end="\n    ")
