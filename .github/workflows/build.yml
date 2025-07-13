@@ -15,7 +15,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pyinstaller
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install pyinstaller
+          python -m pyinstaller --version
           pip install -r requirements.txt
 
       - name: Download htdemucs_ft v4 模型
@@ -32,7 +34,7 @@ jobs:
         working-directory: ./demucs
         shell: cmd
         run: |
-          python -m pyinstaller --onefile separate.py ^
+          python -m PyInstaller --onefile separate.py ^
             --name demucs ^
             --add-data "models;models" ^
             --hidden-import demucs.apply ^
