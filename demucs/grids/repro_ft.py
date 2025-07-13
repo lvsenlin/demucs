@@ -7,8 +7,8 @@
 Fine tuning experiments
 """
 
-from ._explorers import MyExplorer
-from ..train import main
+from _explorers import MyExplorer
+from .train import main
 
 
 @MyExplorer

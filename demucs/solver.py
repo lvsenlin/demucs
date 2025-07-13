@@ -13,12 +13,12 @@ from dora.log import LogProgress, bold
 import torch
 import torch.nn.functional as F
 
-from . import augment, distrib, states, pretrained
-from .apply import apply_model
-from .ema import ModelEMA
-from .evaluate import evaluate, new_sdr
-from .svd import svd_penalty
-from .utils import pull_metric, EMA
+from  import augment, distrib, states, pretrained
+from apply import apply_model
+from ema import ModelEMA
+from evaluate import evaluate, new_sdr
+from svd import svd_penalty
+from utils import pull_metric, EMA
 
 logger = logging.getLogger(__name__)
 

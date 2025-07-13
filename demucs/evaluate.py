@@ -18,10 +18,10 @@ import musdb
 import museval
 import torch as th
 
-from .apply import apply_model
-from .audio import convert_audio, save_audio
-from . import distrib
-from .utils import DummyPoolExecutor
+from apply import apply_model
+from audio import convert_audio, save_audio
+from  import distrib
+from utils import DummyPoolExecutor
 
 
 logger = logging.getLogger(__name__)

@@ -29,10 +29,10 @@ from dora.log import fatal
 from pathlib import Path
 from typing import Optional, Callable, Dict, Tuple, Union
 
-from .apply import apply_model, _replace_dict
-from .audio import AudioFile, convert_audio, save_audio
-from .pretrained import get_model, _parse_remote_files, REMOTE_ROOT
-from .repo import RemoteRepo, LocalRepo, ModelOnlyRepo, BagOnlyRepo
+from apply import apply_model, _replace_dict
+from audio import AudioFile, convert_audio, save_audio
+from pretrained import get_model, _parse_remote_files, REMOTE_ROOT
+from repo import RemoteRepo, LocalRepo, ModelOnlyRepo, BagOnlyRepo
 
 
 class LoadAudioError(Exception):
@@ -350,7 +350,7 @@ if __name__ == "__main__":
     # Test API functions
     # two-stem not supported
 
-    from .separate import get_parser
+    from separate import get_parser
 
     args = get_parser().parse_args()
     separator = Separator(

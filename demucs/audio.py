@@ -14,7 +14,7 @@ import torch
 import torchaudio as ta
 import typing as tp
 
-from .utils import temp_filenames
+from utils import temp_filenames
 
 
 def _read_info(path):

@@ -7,7 +7,7 @@
 Easier training for reproducibility
 """
 
-from ._explorers import MyExplorer
+from _explorers import MyExplorer
 
 
 @MyExplorer

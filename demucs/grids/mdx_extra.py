@@ -7,8 +7,8 @@
 Main training for the Track A MDX models.
 """
 
-from ._explorers import MyExplorer
-from ..train import main
+from _explorers import MyExplorer
+from .train import main
 
 TRACK_B = ['e51eebcc', 'a1d90b5c', '5d2d6c55', 'cfa93e08']
 
