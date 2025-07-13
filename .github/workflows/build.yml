@@ -32,7 +32,7 @@ jobs:
         working-directory: ./demucs
         shell: cmd
         run: |
-          pyinstaller --onefile separate.py ^
+          python -m PyInstaller --onefile separate.py ^
             --name demucs ^
             --add-data "models;models" ^
             --hidden-import demucs.apply ^
