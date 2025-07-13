@@ -15,7 +15,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pyinstaller ^
+          pip install pyinstaller
           pip install -r requirements.txt
 
       - name: Download htdemucs_ft v4 模型
