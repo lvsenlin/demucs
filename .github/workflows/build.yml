@@ -1,0 +1,49 @@
+name: Build Windows EXE
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller ^
+          pip install -r requirements.txt
+
+      - name: Download htdemucs_ft v4 模型
+        run: |
+          cd demucs
+          mkdir models
+          cd models
+          curl -L -o f7e0c4bc.th  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th
+          curl -L -o d12395a8.th  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th
+          curl -L -o 92cfc3b6.th  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th
+          curl -L -o 04573f0d.th  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th
+
+      - name: Build EXE
+        working-directory: ./demucs
+        shell: cmd
+        run: |
+          pyinstaller --onefile separate.py ^
+            --name demucs ^
+            --add-data "models;models" ^
+            --hidden-import demucs.apply ^
+            --hidden-import demucs.audio ^
+            --hidden-import demucs.pretrained ^
+            --hidden-import dora.log ^
+            --hidden-import torch ^
+            --hidden-import torchaudio
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demucs
+          path: demucs/dist/demucs.exe
