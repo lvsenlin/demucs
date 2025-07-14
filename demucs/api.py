@@ -19,6 +19,7 @@ Examples
 --------
 See the end of this module (if __name__ == "__main__")
 """
+import typing as tp
 
 import subprocess
 
