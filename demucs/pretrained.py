@@ -20,13 +20,13 @@ from states import _check_diffq
 import sys
 
 def resolve_default_repo():
-    """
-    获取默认模型路径（兼容 PyInstaller 打包环境）
-    """
+    import sys
+    from pathlib import Path
     if hasattr(sys, "_MEIPASS"):
-        # PyInstaller 打包后的临时路径
         return Path(sys._MEIPASS) / "models"
-    return Path(__file__).parent / "models"
+    else:
+        return Path(__file__).parent / "models"
+
 
 
 logger = logging.getLogger(__name__)
@@ -69,31 +69,21 @@ def _parse_remote_files(remote_file_list) -> tp.Dict[str, str]:
     return models
 
 
-def get_model(name: str,
-              repo: tp.Optional[Path] = None):
-    """`name` must be a bag of models name or a pretrained signature
-    from the remote AWS model repo or the specified local repo if `repo` is not None.
-    """
+def get_model(name: str, repo: tp.Optional[Path] = None):
     if name == 'demucs_unittest':
         return demucs_unittest()
-    model_repo: ModelOnlyRepo
-    if repo is None:
-        models = _parse_remote_files(REMOTE_ROOT / 'files.txt')
-        model_repo = RemoteRepo(models)
-        bag_repo = BagOnlyRepo(REMOTE_ROOT, model_repo)
-    else:
-        if not repo.is_dir():
-            fatal(f"{repo} must exist and be a directory.")
-        model_repo = LocalRepo(repo)
-        bag_repo = BagOnlyRepo(repo, model_repo)
-    any_repo = AnyModelRepo(model_repo, bag_repo)
-    try:
-        model = any_repo.get_model(name)
-    except ImportError as exc:
-        if 'diffq' in exc.args[0]:
-            _check_diffq()
-        raise
 
+    if repo is None:
+        repo = resolve_default_repo()
+
+    if not repo.is_dir():
+        fatal(f"{repo} must exist and be a directory.")
+
+    model_repo = LocalRepo(repo)
+    bag_repo = BagOnlyRepo(repo, model_repo)
+    any_repo = AnyModelRepo(model_repo, bag_repo)
+
+    model = any_repo.get_model(name)
     model.eval()
     return model
 
