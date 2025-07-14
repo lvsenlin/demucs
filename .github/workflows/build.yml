@@ -38,7 +38,7 @@ jobs:
           python -m PyInstaller --onefile separate.py ^
             --name demucs ^
             --add-data "models;models" ^
-            --collect-submodules demucs
+            --collect-submodules demucs ^
             --hidden-import demucs ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.audio ^
