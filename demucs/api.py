@@ -319,31 +319,36 @@ class Separator:
         return self._model
 
 
-def list_models(repo: Optional[Path] = None) -> Dict[str, Dict[str, Union[str, Path]]]:
+def list_models(repo: tp.Optional[Path] = None) -> tp.Dict[str, tp.List[str]]:
     """
-    List the available models. Please remember that not all the returned models can be
-    successfully loaded.
+    Lists all available models in the given repo (folder). Returns separated lists for
+    single .th models and bag-of-models groups (shared prefix).
 
     Parameters
     ----------
-    repo: The repo whose models are to be listed.
+    repo: Path to local models folder. If None, will resolve default path.
 
     Returns
     -------
-    A dict with two keys ("single" for single models and "bag" for bag of models). The values are
-    lists whose components are strs.
+    Dict with keys 'single' and 'bag', each mapping to list of model names.
     """
-    model_repo: ModelOnlyRepo
     if repo is None:
-        models = _parse_remote_files(REMOTE_ROOT / 'files.txt')
-        model_repo = RemoteRepo(models)
-        bag_repo = BagOnlyRepo(REMOTE_ROOT, model_repo)
-    else:
-        if not repo.is_dir():
-            fatal(f"{repo} must exist and be a directory.")
-        model_repo = LocalRepo(repo)
-        bag_repo = BagOnlyRepo(repo, model_repo)
-    return {"single": model_repo.list_model(), "bag": bag_repo.list_model()}
+        repo = resolve_default_repo()
+
+    if not repo.is_dir():
+        fatal(f"Model folder not found: {repo}")
+
+    all_files = list(repo.glob("*.th"))
+    grouped = {}
+
+    for file in all_files:
+        name = file.stem.split("-")[0]
+        grouped.setdefault(name, []).append(file.name)
+
+    single_models = [k for k, v in grouped.items() if len(v) == 1]
+    bag_models = [k for k, v in grouped.items() if len(v) > 1]
+
+    return {"single": single_models, "bag": bag_models}
 
 
 if __name__ == "__main__":
