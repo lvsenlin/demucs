@@ -19,6 +19,7 @@ jobs:
           python -m pip install pyinstaller
           python -m pyinstaller --version
           pip install -r requirements.txt
+          pip install numpy==1.26.4
 
       - name: Download htdemucs_ft v4 模型
         run: |
@@ -37,6 +38,7 @@ jobs:
           python -m PyInstaller --onefile __main__.py ^
             --name demucs ^
             --add-data "models;models" ^
+            --hidden-import demucs ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.audio ^
             --hidden-import demucs.pretrained ^

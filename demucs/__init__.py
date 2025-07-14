@@ -5,3 +5,5 @@
 # LICENSE file in the root directory of this source tree.
 
 __version__ = "4.1.0a2"
+
+from demucs import Demucs
