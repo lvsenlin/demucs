@@ -35,9 +35,10 @@ jobs:
         working-directory: ./demucs
         shell: cmd
         run: |
-          python -m PyInstaller --onefile __main__.py ^
+          python -m PyInstaller --onefile separate.py ^
             --name demucs ^
             --add-data "models;models" ^
+            --collect-submodules demucs
             --hidden-import demucs ^
             --hidden-import demucs.apply ^
             --hidden-import demucs.audio ^
