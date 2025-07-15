@@ -92,16 +92,13 @@ def get_model(name: str, repo: tp.Optional[Path] = None):
                 # 使用目录名作为签名
                 sig = name
                 # 文件的相对路径
-                rel_path = str(model_dir.relative_to(repo) / file_name).replace("\\", "/")
+                rel_path = str(model_dir.relative_to(repo) / file_name
                 model_map[sig] = rel_path
 
-            # 使用 RemoteRepo 加载
-            model_repo = RemoteRepo(model_map, root=repo)
-            bag_repo = BagOnlyRepo(repo, model_repo)
-            any_repo = AnyModelRepo(model_repo, bag_repo)
-
+            # 修复这里：移除 root 参数
+            model_repo = RemoteRepo(model_map)
             try:
-                model = any_repo.get_model(name)
+                model = model_repo.get_model(name)
                 model.eval()
                 return model
             except ModelLoadingError as e:
@@ -112,8 +109,9 @@ def get_model(name: str, repo: tp.Optional[Path] = None):
         if th_files:
             # 只取第一个 .th 文件作为单一模型
             model_file = th_files[0]
-            rel_path = str(model_file.relative_to(repo)).replace("\\", "/")
-            model_repo = RemoteRepo({name: rel_path}, root=repo)
+            rel_path = str(model_file.relative_to(repo))
+            # 修复这里：移除 root 参数
+            model_repo = RemoteRepo({name: rel_path})
             try:
                 model = model_repo.get_model(name)
                 model.eval()
@@ -124,6 +122,7 @@ def get_model(name: str, repo: tp.Optional[Path] = None):
     # 尝试作为单一模型文件加载
     model_file = repo / (name + ".th")
     if model_file.exists():
+        # 修复这里：使用正确的仓库类型
         model_repo = LocalRepo(repo)
         try:
             model = model_repo.get_model(model_file.name)
