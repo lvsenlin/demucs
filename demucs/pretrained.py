@@ -76,36 +76,73 @@ def get_model(name: str, repo: tp.Optional[Path] = None):
     if repo is None:
         repo = resolve_default_repo()
 
+    # 检查是否为模型包目录
     model_dir = repo / name
     if model_dir.is_dir():
-        th_files = sorted(model_dir.glob("*.th"))
-        if not th_files:
-            fatal(f"No .th files found under `{model_dir}`")
+        # 检查是否存在 files.txt
+        files_txt = model_dir / "files.txt"
+        if files_txt.exists():
+            # 读取模型文件列表
+            with open(files_txt) as f:
+                model_files = [line.strip() for line in f if line.strip()]
 
-        # ✅ 构造模型签名映射（模拟 files.txt）
-        model_map = {}
-        for file in th_files:
-            sig = name  # 使用目录名作为签名
-            rel_path = str(file.relative_to(repo)).replace("\\", "/")
-            model_map[sig] = rel_path  # 只需一个代表文件即可
+            # 构建模型签名映射
+            model_map = {}
+            for file_name in model_files:
+                # 使用目录名作为签名
+                sig = name
+                # 文件的相对路径
+                rel_path = str(model_dir.relative_to(repo) / file_name).replace("\\", "/")
+                model_map[sig] = rel_path
 
-        # ✅ 使用 RemoteRepo 加载
-        model_repo = RemoteRepo(model_map, root=repo)
-        bag_repo = BagOnlyRepo(repo, model_repo)
-        any_repo = AnyModelRepo(model_repo, bag_repo)
+            # 使用 RemoteRepo 加载
+            model_repo = RemoteRepo(model_map, root=repo)
+            bag_repo = BagOnlyRepo(repo, model_repo)
+            any_repo = AnyModelRepo(model_repo, bag_repo)
 
-        model = any_repo.get_model(name)
-        model.eval()
-        return model
+            try:
+                model = any_repo.get_model(name)
+                model.eval()
+                return model
+            except ModelLoadingError as e:
+                logger.error(f"Failed to load model package {name}: {str(e)}")
 
-    # ✅ fallback：使用 repo 下的散列模型文件
+        # 如果目录中没有 files.txt，尝试加载为单一模型
+        th_files = list(model_dir.glob("*.th"))
+        if th_files:
+            # 只取第一个 .th 文件作为单一模型
+            model_file = th_files[0]
+            rel_path = str(model_file.relative_to(repo)).replace("\\", "/")
+            model_repo = RemoteRepo({name: rel_path}, root=repo)
+            try:
+                model = model_repo.get_model(name)
+                model.eval()
+                return model
+            except ModelLoadingError as e:
+                logger.error(f"Failed to load single model {name}: {str(e)}")
+
+    # 尝试作为单一模型文件加载
+    model_file = repo / (name + ".th")
+    if model_file.exists():
+        model_repo = LocalRepo(repo)
+        try:
+            model = model_repo.get_model(model_file.name)
+            model.eval()
+            return model
+        except ModelLoadingError as e:
+            logger.error(f"Failed to load single model file {name}: {str(e)}")
+
+    # 尝试作为散列模型文件加载
     model_repo = LocalRepo(repo)
     bag_repo = BagOnlyRepo(repo, model_repo)
     any_repo = AnyModelRepo(model_repo, bag_repo)
 
-    model = any_repo.get_model(name)
-    model.eval()
-    return model
+    try:
+        model = any_repo.get_model(name)
+        model.eval()
+        return model
+    except ModelLoadingError as e:
+        fatal(f"Could not load model {name}: {str(e)}")
 
 
 def get_model_from_args(args):
