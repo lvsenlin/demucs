@@ -320,40 +320,36 @@ class Separator:
         return self._model
 
 
-def get_model(name: str, repo: tp.Optional[Path] = None):
-    if name == 'demucs_unittest':
-        return demucs_unittest()
+def list_models(repo: tp.Optional[Path] = None) -> tp.Dict[str, tp.List[str]]:
+    """
+    Lists all available models in the given repo (folder). Returns separated lists for
+    single .th models and bag-of-models groups (shared prefix).
 
+    Parameters
+    ----------
+    repo: Path to local models folder. If None, will resolve default path.
+
+    Returns
+    -------
+    Dict with keys 'single' and 'bag', each mapping to list of model names.
+    """
     if repo is None:
         repo = resolve_default_repo()
 
     if not repo.is_dir():
-        fatal(f"{repo} must exist and be a directory.")
+        fatal(f"Model folder not found: {repo}")
 
-    # ✅ 检查是否存在 models/htdemucs_ft 文件夹
-    model_dir = repo / name
-    if model_dir.is_dir():
-        bag_files = sorted(model_dir.glob("*.th"))
-        if not bag_files:
-            fatal(f"No .th files found in {model_dir}")
-        logger.info(f"Loading bag-of-models from folder `{model_dir}`.")
-        model_repo = LocalRepo(model_dir)
-        bag_repo = BagOnlyRepo(model_dir, model_repo)
-        return bag_repo.get_model(name)
+    all_files = list(repo.glob("*.th"))
+    grouped = {}
 
-    # ✅ 正常按签名匹配逻辑处理 models 文件夹中 .th 文件
-    model_repo = LocalRepo(repo)
-    bag_repo = BagOnlyRepo(repo, model_repo)
-    any_repo = AnyModelRepo(model_repo, bag_repo)
+    for file in all_files:
+        name = file.stem.split("-")[0]
+        grouped.setdefault(name, []).append(file.name)
 
-    try:
-        model = any_repo.get_model(name)
-        model.eval()
-        return model
-    except ImportError as exc:
-        if 'diffq' in str(exc):
-            _check_diffq()
-        raise
+    single_models = [k for k, v in grouped.items() if len(v) == 1]
+    bag_models = [k for k, v in grouped.items() if len(v) > 1]
+
+    return {"single": single_models, "bag": bag_models}
 
 
 if __name__ == "__main__":
