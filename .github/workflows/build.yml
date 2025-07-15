@@ -24,8 +24,8 @@ jobs:
       - name: Download htdemucs_ft v4 模型
         run: |
           cd demucs
-          mkdir models
-          cd models
+          mkdir models/htdemucs_ft
+          cd models/htdemucs_ft
           curl -L -o f7e0c4bc.th  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th
           curl -L -o d12395a8.th  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th
           curl -L -o 92cfc3b6.th  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th
