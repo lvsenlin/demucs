@@ -76,40 +76,25 @@ def get_model(name: str, repo: tp.Optional[Path] = None):
     if repo is None:
         repo = resolve_default_repo()
 
-    if not repo.is_dir():
-        fatal(f"{repo} must exist and be a directory.")
+    model_dir = repo / name
+    if model_dir.is_dir():
+        th_files = sorted(model_dir.glob("*.th"))
+        if th_files:
+            logger.info(f"Loading bag-of-models from directory `{model_dir}`")
+            bag_repo = BagOnlyRepo(model_dir, LocalRepo(model_dir))
+            model = bag_repo.get_model_from_folder(name, model_dir)
+            model.eval()
+            return model
+        else:
+            fatal(f"No .th files found under `{model_dir}`")
 
-    # ✅ 模拟 remote repo，通过目录结构硬编码签名映射
-    folder = repo / name
-    if folder.is_dir():
-        model_map: tp.Dict[str, str] = {}
-        for file in sorted(folder.glob("*.th")):
-            sig = name  # 使用 folder 名作为统一签名
-            rel_path = str(file.relative_to(repo)).replace("\\", "/")
-            model_map[sig] = rel_path  # 只需提供一个代表文件即可
-            break  # 不用管 BagOnlyRepo 的多个文件逻辑，它会接着找同签名前缀
-        if not model_map:
-            fatal(f"No .th files found under folder: {folder}")
-        model_repo = RemoteRepo(model_map, root=repo)
-        bag_repo = BagOnlyRepo(repo, model_repo)
-        any_repo = AnyModelRepo(model_repo, bag_repo)
-        model = any_repo.get_model(name)
-        model.eval()
-        return model
-
-    # ✅ 退回旧逻辑：repo 下存在 *.th 文件，且文件名以签名为前缀
+    # fallback: match *.th by prefix
     model_repo = LocalRepo(repo)
     bag_repo = BagOnlyRepo(repo, model_repo)
     any_repo = AnyModelRepo(model_repo, bag_repo)
-
-    try:
-        model = any_repo.get_model(name)
-        model.eval()
-        return model
-    except ImportError as exc:
-        if 'diffq' in str(exc):
-            _check_diffq()
-        raise
+    model = any_repo.get_model(name)
+    model.eval()
+    return model
 
 
 def get_model_from_args(args):
