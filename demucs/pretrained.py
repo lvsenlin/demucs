@@ -79,19 +79,30 @@ def get_model(name: str, repo: tp.Optional[Path] = None):
     model_dir = repo / name
     if model_dir.is_dir():
         th_files = sorted(model_dir.glob("*.th"))
-        if th_files:
-            logger.info(f"Loading bag-of-models from directory `{model_dir}`")
-            bag_repo = BagOnlyRepo(model_dir, LocalRepo(model_dir))
-            model = bag_repo.get_model_from_folder(name, model_dir)
-            model.eval()
-            return model
-        else:
+        if not th_files:
             fatal(f"No .th files found under `{model_dir}`")
 
-    # fallback: match *.th by prefix
+        # ✅ 构造模型签名映射（模拟 files.txt）
+        model_map = {}
+        for file in th_files:
+            sig = name  # 使用目录名作为签名
+            rel_path = str(file.relative_to(repo)).replace("\\", "/")
+            model_map[sig] = rel_path  # 只需一个代表文件即可
+
+        # ✅ 使用 RemoteRepo 加载
+        model_repo = RemoteRepo(model_map, root=repo)
+        bag_repo = BagOnlyRepo(repo, model_repo)
+        any_repo = AnyModelRepo(model_repo, bag_repo)
+
+        model = any_repo.get_model(name)
+        model.eval()
+        return model
+
+    # ✅ fallback：使用 repo 下的散列模型文件
     model_repo = LocalRepo(repo)
     bag_repo = BagOnlyRepo(repo, model_repo)
     any_repo = AnyModelRepo(model_repo, bag_repo)
+
     model = any_repo.get_model(name)
     model.eval()
     return model
